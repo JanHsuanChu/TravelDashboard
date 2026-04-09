@@ -13,9 +13,11 @@ flowchart TB
     Agent1["Agent 1<br> RAG, tool calling"] --> n1["Agent 2<br> Recommendation Engine"]
     Agent3 --> SummaryReport["Travel Dashboard (display)<br>-Recommendations<br>-FriendliessScore<br>-Selected location info"]
     n2["Restaurant review data"] -- API --> Agent1
-    Database --> Agent1
-    n3["Location data<br> (World Bank, World Monitor, NYTimes)"] --> Agent2
+    Database -- API --> Agent1
+    n3["Location data<br> (World Bank, World Monitor, NYTimes)"] -- API --> Agent2
     n1 --> Agent3
+    Dashboard -- API --> n3
+    Dashboard -- API --> n2
 
     Dashboard@{ shape: rect}
     Agent2@{ shape: rect}
