@@ -1,17 +1,15 @@
-# Dependencies
-node_modules/
-
-# Build
-dist/
-
-# Local env
+# Local env (Shiny)
+shiny_app/.env
 .env
 .env.*.local
 
-# Logs / caches
-*.log
-npm-debug.log*
-.DS_Store
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+shiny_app/.venv/
 
-# TypeScript
-*.tsbuildinfo
+# OS / editor
+.DS_Store
+*.log

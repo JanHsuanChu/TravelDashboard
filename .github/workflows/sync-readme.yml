@@ -6,7 +6,7 @@ on:
     paths:
       - "docs/architecture.md"
       - "README.template.md"
-      - "scripts/build-readme.mjs"
+      - "scripts/build_readme.py"
       - ".github/workflows/sync-readme.yml"
 
 permissions:
@@ -20,12 +20,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.12"
 
       - name: Regenerate README.md
-        run: node scripts/build-readme.mjs
+        run: python3 scripts/build_readme.py
 
       - name: Commit if changed
         run: |
