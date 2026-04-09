@@ -1,0 +1,40 @@
+name: Sync README from architecture doc
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/architecture.md"
+      - "README.template.md"
+      - "scripts/build-readme.mjs"
+      - ".github/workflows/sync-readme.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Regenerate README.md
+        run: node scripts/build-readme.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if git diff --staged --quiet; then
+            echo "README.md already up to date."
+          else
+            git commit -m "chore: sync README from docs/architecture.md"
+            git push
+          fi
