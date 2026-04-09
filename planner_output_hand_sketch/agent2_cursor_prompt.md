@@ -1,0 +1,3 @@
+# Cursor prompt
+
+Build a Travel Dashboard using Next.js 14 (App Router), Tailwind CSS, and Shadcn/UI. Create a single-page layout: top half for inputs (destination, dates, food prefs), bottom half for three output cards (Dining, Advisories, Score). Implement API routes at /api/plan to handle logic. Integrate AI using llama3.2 via Ollama or compatible API for generating JSON-structured recommendations and scores. Use PostgreSQL with Prisma for storing user preferences and trip history. Ensure responsive design (stack cards on mobile). Add error handling for API failures. Initialize with dummy data for testing. Focus on clean component separation: InputForm, OutputGrid, RecommendationCard.

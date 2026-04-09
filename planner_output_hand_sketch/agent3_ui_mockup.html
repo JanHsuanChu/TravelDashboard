@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Dashboard - Trip Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .input-label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+        .input-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; outline: none; transition: border-color 0.15s; }
+        .input-field:focus { border-color: #3b82f6; ring: 2px solid #3b82f6; }
+        .btn-primary { background-color: #2563eb; color: white; padding: 0.625rem 1.25rem; border-radius: 0.375rem; font-weight: 500; transition: background-color 0.2s; border: none; cursor: pointer; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .score-circle { width: 120px; height: 120px; border-radius: 50%; border: 8px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: #1f2937; position: relative; }
+        .score-progress { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 8px solid #22c55e; border-top-color: transparent; border-right-color: transparent; transform: rotate(-45deg); }
+        .tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; background-color: #e0e7ff; color: #4338ca; }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">T</div>
+            <span class="text-xl font-bold tracking-tight text-gray-900">Travel Dashboard</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-900">Preferences</a>
+            <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-900">History</a>
+            <div class="w-8 h-8 rounded-full bg-gray-200 border border-gray-300"></div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full p-6 flex flex-col gap-6">
+        
+        <!-- Top Half: Input Section -->
+        <section class="card p-6">
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-gray-900">Plan Your Trip</h2>
+                <p class="text-sm text-gray-500">Enter your destination and preferences to generate a personalized itinerary.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <!-- Where I am going -->
+                <div class="input-group md:col-span-3">
+                    <label class="input-label">Where I am going</label>
+                    <div class="flex gap-2">
+                        <input type="text" class="input-field" placeholder="Country" value="Japan">
+                        <input type="text" class="input-field" placeholder="City" value="Kyoto">
+                    </div>
+                </div>
+
+                <!-- Compare With -->
+                <div class="input-group md:col-span-3">
+                    <label class="input-label">Compare with (Optional)</label>
+                    <div class="flex gap-2">
+                        <input type="text" class="input-field" placeholder="Country" value="Thailand">
+                        <input type="text" class="input-field" placeholder="City" value="Chiang Mai">
+                    </div>
+                </div>
+
+                <!-- When -->
+                <div class="input-group md:col-span-2">
+                    <label class="input-label">When</label>
+                    <select class="input-field bg-white">
+                        <option>Spring (March-May)</option>
+                        <option selected>Summer (June-Aug)</option>
+                        <option>Autumn (Sept-Nov)</option>
+                        <option>Winter (Dec-Feb)</option>
+                    </select>
+                </div>
+
+                <!-- Food Preferences -->
+                <div class="input-group md:col-span-4">
+                    <label class="input-label">Food Preferences</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-600">Spicy</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-600">Vegetarian</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-600">Street Food</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-600">Fine Dining</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button class="btn-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Generate Recommendations
+                </button>
+            </div>
+        </section>
+
+        <!-- Bottom Half: Output Section -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+            
+            <!-- Card 1: Dining Recommendations -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        Dining Recommendations
+                    </h3>
+                    <span class="tag">Kyoto</span>
+                </div>
+                <div class="space-y-4 overflow-y-auto">
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-medium text-sm text-gray-900">Nishiki Market</h4>
+                            <span class="text-xs text-green-600 font-medium">98% Match</span>
+                        </div>
+                        <p class="text-xs text-gray-500">Famous for street food stalls, pickles, and fresh seafood. Perfect for your "Street Food" preference.</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-medium text-sm text-gray-900">Gion Kappo Sakamoto</h4>
+                            <span class="text-xs text-blue-600 font-medium">Fine Dining</span>
+                        </div>
+                        <p class="text-xs text-gray-500">Traditional Kaiseki cuisine. Reservations required.</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-medium text-sm text-gray-900">Ichiran Ramen</h4>
+                            <span class="text-xs text-orange-600 font-medium">Spicy</span>
+                        </div>
+                        <p class="text-xs text-gray-500">Customizable spice levels available. Open late.</p>
+                    </div>
+                </div>
+                <button class="mt-auto pt-4 text-sm text-blue-600 font-medium hover:text-blue-800 text-left">View full list &rarr;</button>
+            </div>
+
+            <!-- Card 2: Essential Travel Advisory -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Travel Advisory
+                    </h3>
+                    <span class="tag">Summer</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width
