@@ -42,7 +42,23 @@ npm run readme    # regenerate README.md from docs/architecture.md (see Architec
 
 ## Stack
 
-- [Vite](https://vitejs.dev/) + [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/) + [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) (optional web client)
+- [Shiny for Python](https://shiny.posit.co/py/) — dashboard in [`shiny_app/`](shiny_app/) (Bootstrap-style cards via `ui.card` / `ui.layout_columns`)
+
+## Python Shiny dashboard
+
+Browser-only app: trip/compare/when inputs (UI-only for now), food preferences saved to Supabase `preference`, optional **Generate** calls **Ollama Cloud** `gpt-oss:20b-cloud` with [`docs/architecture.md`](docs/architecture.md) as context.
+
+```bash
+cd shiny_app
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env        # add SUPABASE_URL, SUPABASE_KEY, OLLAMA_API_KEY
+shiny run app.py --reload
+```
+
+Open the URL Shiny prints (usually `http://127.0.0.1:8000`).
 
 ## Architecture
 
@@ -73,18 +89,25 @@ The diagram and legend below are **generated** from [`docs/architecture.md`](doc
 | `preference_id` | `BIGINT` | Primary key, generated identity |
 | `user_id` | `UUID` | not null, FK → `app_user(user_id)` (cascade on delete) |
 | `created_at` | `TIMESTAMPTZ` | not null, default `now()` |
-| `dietary_restrictions` | `TEXT` | nullable |
+| `dietary_restrictions` | `TEXT` | nullable (third food free-text field; UI max 50 words) |
 | `dining_preference` | `TEXT` | nullable |
+| `food_like_text` | `TEXT` | nullable (UI max 50 words) |
+| `food_dislike_text` | `TEXT` | nullable (UI max 50 words) |
+| `food_tags` | `JSONB` | not null, default `{}` — preset checkbox slugs: `like` / `dislike` / `dietary` arrays |
 
 Index: `idx_preference_user_created_at` on `(user_id, created_at DESC)`.
 
 ### Apply migrations
 
-The migration is in [`supabase/migrations/001_app_user_preference.sql`](supabase/migrations/001_app_user_preference.sql).
+Run in order:
 
-- **Option A: Supabase Dashboard (SQL Editor)**: open SQL Editor, paste the file contents, click **Run**.
-- **Option B: Supabase MCP**: configure MCP with `https://mcp.supabase.com/mcp?project_ref=stnfxxjktzznvlfhczcz`, then run `apply_migration` / `execute_sql` with the file contents.
+1. [`supabase/migrations/001_app_user_preference.sql`](supabase/migrations/001_app_user_preference.sql)
+2. [`supabase/migrations/002_preference_food_text.sql`](supabase/migrations/002_preference_food_text.sql)
+
+- **Option A: Supabase Dashboard (SQL Editor)**: paste each file and **Run**.
+- **Option B: Supabase MCP**: `apply_migration` / `execute_sql` with the same SQL.
 
 ## Layout
 
-All app code lives under this directory (`TravelDashboard/`). Add routes, API clients, and components under `src/` as the product grows.
+- **React (Vite):** `src/`
+- **Shiny (Python):** `shiny_app/` (`app.py`, `ui.py`, `server.py`, `ui/` fragments, `www/custom.css`)
