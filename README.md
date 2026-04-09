@@ -43,6 +43,41 @@ npm run preview  # serve dist locally
 
 - [Vite](https://vitejs.dev/) + [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 
+## Supabase
+
+**Project URL:** `https://stnfxxjktzznvlfhczcz.supabase.co`  
+**Project reference (for MCP):** `stnfxxjktzznvlfhczcz`
+
+### Schema
+
+#### `app_user`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `user_id` | `UUID` | Primary key, default `gen_random_uuid()` |
+| `first_name` | `TEXT` | not null |
+| `email` | `TEXT` | not null, unique |
+| `created_at` | `TIMESTAMPTZ` | not null, default `now()` |
+
+#### `preference`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `preference_id` | `BIGINT` | Primary key, generated identity |
+| `user_id` | `UUID` | not null, FK → `app_user(user_id)` (cascade on delete) |
+| `created_at` | `TIMESTAMPTZ` | not null, default `now()` |
+| `dietary_restrictions` | `TEXT` | nullable |
+| `dining_preference` | `TEXT` | nullable |
+
+Index: `idx_preference_user_created_at` on `(user_id, created_at DESC)`.
+
+### Apply migrations
+
+The migration is in [`supabase/migrations/001_app_user_preference.sql`](supabase/migrations/001_app_user_preference.sql).
+
+- **Option A: Supabase Dashboard (SQL Editor)**: open SQL Editor, paste the file contents, click **Run**.
+- **Option B: Supabase MCP**: configure MCP with `https://mcp.supabase.com/mcp?project_ref=stnfxxjktzznvlfhczcz`, then run `apply_migration` / `execute_sql` with the file contents.
+
 ## Layout
 
 All app code lives under this directory (`TravelDashboard/`). Add routes, API clients, and components under `src/` as the product grows.
