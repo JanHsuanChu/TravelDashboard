@@ -5,9 +5,13 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 OLLAMA_CHAT_URL = os.environ.get("OLLAMA_HOST", "https://ollama.com").rstrip("/") + "/api/chat"
 DEFAULT_MODEL = "gpt-oss:20b-cloud"

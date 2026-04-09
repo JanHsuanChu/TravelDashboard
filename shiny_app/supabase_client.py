@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from supabase import Client, create_client
 
 _client: Client | None = None
@@ -14,17 +15,8 @@ _client: Client | None = None
 
 def _load_dotenv() -> None:
     env = Path(__file__).resolve().parent / ".env"
-    if not env.exists():
-        return
-    with open(env, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, _, v = line.partition("=")
-            k, v = k.strip(), v.strip().strip('"').strip("'")
-            if k and k not in os.environ:
-                os.environ[k] = v
+    if env.exists():
+        load_dotenv(env)
 
 
 def get_supabase() -> Client:
