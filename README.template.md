@@ -49,13 +49,25 @@ npm run readme    # regenerate README.md from docs/architecture.md (see Architec
 
 Browser-only app: trip/compare/when inputs (UI-only for now), food preferences saved to Supabase `preference`, optional **Generate** calls **Ollama Cloud** `gpt-oss:20b-cloud` with [`docs/architecture.md`](docs/architecture.md) as context.
 
+**Paths:** `requirements.txt` and `app.py` live in **`shiny_app/`** inside this repo. If `cd TravelDashboard/shiny_app` fails, your shell is not in the parent of `TravelDashboard` (for example you might be in `TravelDashboard` already — then use `cd shiny_app` only, or use the absolute path to `TravelDashboard/shiny_app`).
+
+**Do not** run `export SUPABASE_*=...` in zsh with a bare `*` — set real names, e.g. `export SUPABASE_URL="..."` and `export SUPABASE_KEY="..."`, or put them in `shiny_app/.env`.
+
 ```bash
+# From the TravelDashboard repo root (the folder that contains shiny_app/):
 cd shiny_app
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env        # add SUPABASE_URL, SUPABASE_KEY, OLLAMA_API_KEY
 shiny run app.py --reload
+```
+
+Or from the repo root, after the venv above exists and `shiny` is on your PATH:
+
+```bash
+chmod +x run_shiny.sh
+./run_shiny.sh
 ```
 
 Open the URL Shiny prints (usually `http://127.0.0.1:8000`).
