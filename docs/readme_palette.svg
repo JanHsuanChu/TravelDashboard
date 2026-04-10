@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="64" viewBox="0 0 640 64" role="img" aria-label="Travel Dashboard brand palette">
+  <title>Travel Dashboard brand palette</title>
+  <rect x="0" y="0" width="128" height="32" rx="6" fill="#AC85E9"/>
+  <rect x="128" y="0" width="128" height="32" fill="#FF6C9D"/>
+  <rect x="256" y="0" width="128" height="32" fill="#FFA3C8"/>
+  <rect x="384" y="0" width="128" height="32" fill="#FDE164"/>
+  <rect x="512" y="0" width="128" height="32" rx="6" fill="#01E1F2"/>
+  <text x="64" y="52" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#5c4d6e">#AC85E9</text>
+  <text x="192" y="52" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#5c4d6e">#FF6C9D</text>
+  <text x="320" y="52" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#5c4d6e">#FFA3C8</text>
+  <text x="448" y="52" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#5c4d6e">#FDE164</text>
+  <text x="576" y="52" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#5c4d6e">#01E1F2</text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "snapshot_date": "2026-04-10",
+  "note": "Seed min/max from a small multi-country extract (Azerbaijan, Georgia, Armenia). Regenerate with: python3 scripts/build_wb_indicator_bounds.py",
+  "reference_countries_n": 3,
+  "bounds": {
+    "EN.ATM.PM25.MC.M3": { "vmin": 17.0438421058507, "vmax": 30.5796334750125 },
+    "SH.H2O.SMDW.ZS": { "vmin": 57.8118283196096, "vmax": 82.0728191880242 },
+    "SH.STA.SMSS.ZS": { "vmin": 10.7392367176734, "vmax": 68.0033446575086 },
+    "PV.EST": { "vmin": -0.830278230667114, "vmax": -0.335554122924805 },
+    "RL.EST": { "vmin": -0.566586077213287, "vmax": 0.177279338240623 },
+    "IC.WBL.DFRN.XQ": { "vmin": 0.0, "vmax": 100.0 },
+    "SL.TLF.CACT.FE.ZS": { "vmin": 51.586, "vmax": 61.35 },
+    "VA.EST": { "vmin": -1.41153395175934, "vmax": 0.0767075568437576 },
+    "ST.INT.RCPT.XP.ZS": { "vmin": 2.23476091933944, "vmax": 9.88456492872421 },
+    "ST.INT.RCPT.CD": { "vmin": 303000000.0, "vmax": 586000000.0 },
+    "PA.NUS.FCRF": { "vmin": 1.7, "vmax": 392.729551399084 },
+    "FP.CPI.TOTL.ZG": { "vmin": 0.269511978259125, "vmax": 2.21217188919901 }
+  }
+}

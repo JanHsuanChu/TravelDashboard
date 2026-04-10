@@ -4,6 +4,69 @@ import tags as tagdata
 import validators as val
 
 
+def food_preference_combined_content():
+    """Full-width row: three columns (like / dislike / dietary), tags + text per column."""
+    return ui.div(
+        ui.p("Food preferences", class_="td-input-label td-food-row-title"),
+        ui.p(
+            f"Preset tags and detail (max {val.MAX_WORDS_FOOD_TEXT} words per box).",
+            class_="td-muted td-input-hint",
+        ),
+        ui.layout_columns(
+            ui.div(
+                ui.span("Food I like", class_="td-food-mini-head"),
+                ui.input_checkbox_group(
+                    "like_tags",
+                    None,
+                    choices=tagdata.FOOD_LIKE_CHOICES,
+                    inline=True,
+                ),
+                ui.input_text_area(
+                    "food_like_text",
+                    "More detail (optional)",
+                    rows=2,
+                    placeholder="Anything else you enjoy…",
+                ),
+                class_="td-food-stack-item td-food-stack-like",
+            ),
+            ui.div(
+                ui.span("Food I dislike", class_="td-food-mini-head"),
+                ui.input_checkbox_group(
+                    "dislike_tags",
+                    None,
+                    choices=tagdata.FOOD_DISLIKE_CHOICES,
+                    inline=True,
+                ),
+                ui.input_text_area(
+                    "food_dislike_text",
+                    "More detail (optional)",
+                    rows=2,
+                    placeholder="Other foods to avoid…",
+                ),
+                class_="td-food-stack-item td-food-stack-dislike",
+            ),
+            ui.div(
+                ui.span("Dietary restrictions", class_="td-food-mini-head"),
+                ui.input_checkbox_group(
+                    "dietary_tags",
+                    None,
+                    choices=tagdata.DIETARY_CHOICES,
+                    inline=True,
+                ),
+                ui.input_text_area(
+                    "dietary_restrictions_text",
+                    "Allergies or other restrictions (optional)",
+                    rows=2,
+                    placeholder="Allergies or other restrictions…",
+                ),
+                class_="td-food-stack-item td-food-stack-dietary",
+            ),
+            col_widths=(4, 4, 4),
+        ),
+        class_="td-input-group td-food-combined",
+    )
+
+
 def food_preference_blocks_ui():
     return ui.card(
         ui.card_header("Food preferences"),

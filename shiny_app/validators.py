@@ -12,6 +12,18 @@ def word_count(text: str) -> int:
     return len(text.split())
 
 
+def valid_email_shape(email: str) -> bool:
+    """Minimal check: non-empty local and domain around a single @."""
+    s = (email or "").strip()
+    if "@" not in s:
+        return False
+    parts = s.split("@")
+    if len(parts) != 2:
+        return False
+    local, domain = parts[0], parts[1]
+    return bool(local.strip()) and bool(domain.strip()) and "." in domain
+
+
 def validate_food_text(text: str, label: str) -> str | None:
     """Return error message if invalid, else None."""
     n = word_count(text)

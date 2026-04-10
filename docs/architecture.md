@@ -1,6 +1,8 @@
-# Travel Dashboard — architecture (reference)
+The **first** diagram is the **target** pipeline (multi-agent orchestration, RAG, external tools). The **second** diagram is the **current** Shiny prototype (single LLM call, Supabase, injected architecture context).
 
-This diagram captures the intended data flow and agent pipeline. Use it when planning features, APIs, and UI surfaces.
+#### Target pipeline (agentic orchestration, RAG, tool calling)
+
+This is the roadmap: specialized agents, retrieval from reviews and location APIs, and a report path to the dashboard UI.
 
 ```mermaid
 ---
@@ -36,7 +38,7 @@ flowchart TB
     style n3 fill:#e8e8e8
 ```
 
-## Legend (quick read)
+#### Legend (target pipeline)
 
 | Area | Role |
 |------|------|
@@ -47,3 +49,31 @@ flowchart TB
 | **Agent 1 → Agent 2** | RAG/tool calling → recommendation engine. |
 | **Agent 3 → Agent 4** | Analyst → (tentative) report writer. |
 | **Travel Dashboard (display)** | Recommendations, friendliness score, selected location info. |
+
+#### Current implementation (Shiny prototype — data flow)
+
+What runs today: one **Ollama Cloud** chat completion per **Generate** click; **no** separate agent processes, **no** vector RAG index. `docs/architecture.md` is loaded **in full** as static system context (prompt injection), not retrieved by similarity search.
+
+```mermaid
+flowchart LR
+    subgraph ui [Shiny UI]
+        Form[Trip + food inputs]
+        Btn[Generate]
+        Save[Save preferences]
+    end
+    subgraph server [Python server]
+        Ctx[build_trip_context]
+        Arch[load_architecture_markdown]
+        Prompt[System + user JSON prompt]
+    end
+    SB[(Supabase REST)]
+    Ollama[[Ollama Cloud API /api/chat]]
+    Form --> Ctx
+    Btn --> Prompt
+    Arch --> Prompt
+    Ctx --> Prompt
+    Prompt --> Ollama
+    Ollama -->|JSON in reply| Out[Dining / Essential / Friendliness UI]
+    Save --> SB
+    SB -->|Recent rows| Table[Preferences table]
+```
