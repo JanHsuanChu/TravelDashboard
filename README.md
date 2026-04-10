@@ -188,7 +188,7 @@ If you add real tools later, document each **name**, **purpose**, **parameters**
 - Supabase: project REST URL from dashboard (used by `supabase-py`).
 - Ollama Cloud: `{OLLAMA_HOST or https://ollama.com}/api/chat` — see [`shiny_app/ollama_client.py`](shiny_app/ollama_client.py).
 
-**Packages:** see [`shiny_app/requirements.txt`](shiny_app/requirements.txt) (`shiny`, `supabase`, `requests`, `python-dotenv`).
+**Packages:** see [`shiny_app/requirements.txt`](shiny_app/requirements.txt) (`shiny`, `supabase`, `requests`, `python-dotenv`, `pandas`, `markdown` for World Bank friendliness).
 
 **Repository layout:**
 
