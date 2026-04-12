@@ -8,7 +8,8 @@ from shiny import ui
 from components import (
     compare_with_rows_content,
     destination_fields_content,
-    dining_output_ui,
+    dining_dishes_output_ui,
+    dining_places_map_output_ui,
     essential_info_ui,
     food_preference_combined_content,
     travel_friendliness_ui,
@@ -89,6 +90,19 @@ _PREF_CLIENT_JS = ui.tags.script(
     """
 )
 
+_MAP_PLACE_ROW_CLICK_JS = ui.tags.script(
+    """
+    document.addEventListener('click', function(ev) {
+      var row = ev.target.closest('[data-td-place-idx]');
+      if (!row || !window.Shiny || !window.Shiny.setInputValue) return;
+      if (ev.target.closest('a')) return;
+      var idx = row.getAttribute('data-td-place-idx');
+      if (idx === null || idx === '') return;
+      Shiny.setInputValue('map_place_pick', idx, { priority: 'event' });
+    });
+    """
+)
+
 _TD_COUNTRY_DATALIST_JS = ui.tags.script(
     """
     (function() {
@@ -119,6 +133,7 @@ app_ui = ui.page_fillable(
     ui.head_content(
         _INTER_FONT,
         ui.include_css(APP_ROOT / "www" / "custom.css"),
+        _MAP_PLACE_ROW_CLICK_JS,
         _PREF_CLIENT_JS,
         _TD_COUNTRY_DATALIST_JS,
     ),
@@ -218,12 +233,16 @@ app_ui = ui.page_fillable(
                 ui.h4("Outputs", class_="td-section-title"),
                 ui.div(
                     ui.layout_columns(
-                        dining_output_ui(),
+                        dining_dishes_output_ui(),
                         essential_info_ui(),
                         travel_friendliness_ui(),
                         col_widths=(4, 4, 4),
                     ),
                     class_="td-out-grid",
+                ),
+                ui.div(
+                    dining_places_map_output_ui(),
+                    class_="td-dining-places-row",
                 ),
                 class_="td-shell",
             ),

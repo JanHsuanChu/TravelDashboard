@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -14,25 +15,46 @@ from supabase.lib.client_options import SyncClientOptions
 
 _client: Client | None = None
 
-# New-format secret keys (sb_secret_...) are rejected when the request looks like a browser
-# (Supabase API gateway User-Agent check). Force a server-side identity for all requests.
+# supabase-py 2.15.x only accepts JWT-shaped keys (legacy anon / service_role). New dashboard keys
+# (sb_publishable_… / sb_secret_…) fail its local validation with "Invalid API key" before any HTTP call.
+# sb_secret_* also needs a non-browser User-Agent at the gateway; we set both via SyncClientOptions.
 _SERVER_UA = "TravelDashboard-Shiny/1.0 (Python; server; supabase-py)"
+
+# Mirrors supabase._sync.client.SyncClient __init__ check (so we can raise a clearer error).
+_SUPABASE_PY_JWT_KEY_RE = re.compile(
+    r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
+)
 
 
 def _load_dotenv() -> None:
     env = Path(__file__).resolve().parent / ".env"
     if env.exists():
-        load_dotenv(env)
+        # override=True: a stale/wrong SUPABASE_* in the shell or OS must not beat shiny_app/.env
+        load_dotenv(env, override=True)
+
+
+def _env_clean(name: str) -> str:
+    v = (os.environ.get(name) or "").strip()
+    if v.startswith("\ufeff"):
+        v = v.lstrip("\ufeff").strip()
+    return v
 
 
 def get_supabase() -> Client:
     global _client
     _load_dotenv()
     if _client is None:
-        url = os.environ.get("SUPABASE_URL", "")
-        key = os.environ.get("SUPABASE_KEY", "")
+        url = _env_clean("SUPABASE_URL").rstrip("/")
+        key = _env_clean("SUPABASE_KEY")
         if not url or not key:
             raise ValueError("Set SUPABASE_URL and SUPABASE_KEY in shiny_app/.env")
+        if not _SUPABASE_PY_JWT_KEY_RE.match(key):
+            raise ValueError(
+                "SUPABASE_KEY must be a legacy JWT (anon or service_role — usually starts with 'eyJ'). "
+                "The supabase-py version in this project does not accept new dashboard keys "
+                "(sb_publishable_… or sb_secret_…). In Supabase: Project Settings → API → "
+                "copy the anon (legacy) JWT, or service_role for server-only use."
+            )
         opts = SyncClientOptions(
             headers={
                 "User-Agent": _SERVER_UA,

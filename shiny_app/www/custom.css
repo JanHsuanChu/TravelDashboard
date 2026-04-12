@@ -478,6 +478,237 @@
   font-weight: 600;
 }
 
+.td-dining-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.td-dining-card-title {
+  font-weight: 600;
+}
+
+.td-out-destination-tag-wrap:empty {
+  display: none;
+}
+
+.td-out-destination-tag-wrap .td-out-destination-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(172, 133, 233, 0.2);
+  color: #4338ca;
+}
+
+.td-places-error-banner {
+  margin: 0 0.75rem 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(163, 31, 58, 0.35);
+  background: rgba(255, 108, 157, 0.12);
+  flex-shrink: 0;
+}
+
+.td-places-error-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7a1d32;
+}
+
+.td-places-error-body {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--td-text);
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  background: rgba(255, 255, 255, 0.65);
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--td-border);
+}
+
+.td-dining-out {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.td-output-subhead {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--td-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.td-dining-item {
+  padding: 0.65rem 0.75rem;
+  background: rgba(246, 244, 251, 0.85);
+  border: 1px solid var(--td-border);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.td-dining-item:last-child {
+  margin-bottom: 0;
+}
+
+.td-dining-item-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.td-dining-item-title h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--td-text);
+}
+
+.td-dining-item-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--td-pink);
+}
+
+.td-dining-item-note {
+  font-size: 0.8rem;
+  color: var(--td-text-muted);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.td-dining-places-row {
+  margin-top: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.td-dining-places-card.td-out-card {
+  max-height: none;
+  min-height: 0;
+}
+
+.td-dining-places-card-title {
+  font-weight: 600;
+}
+
+.td-dining-places-split {
+  padding: 0 0.35rem 0.85rem;
+  min-height: 0;
+}
+
+.td-dining-places-split > .row {
+  align-items: stretch;
+}
+
+.td-dining-places-split > .row > [class*="col"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.td-dining-places-list-wrap {
+  min-height: 16rem;
+  max-height: min(50vh, 28rem);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.td-dining-places-map-wrap {
+  min-height: 16rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.td-gmap-root {
+  flex: 1 1 auto;
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.td-gmap-help {
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.td-gmap-iframe {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 22rem;
+  height: 22rem;
+  border: 1px solid var(--td-border);
+  border-radius: 0.5rem;
+  background: #ece8f4;
+}
+
+.td-gmap-placeholder {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--td-text-muted);
+  line-height: 1.45;
+}
+
+.td-dining-place-address {
+  font-size: 0.78rem;
+  margin: 0.35rem 0 0;
+  line-height: 1.35;
+}
+
+.td-dining-place-address a {
+  color: var(--td-purple);
+  text-decoration: underline;
+}
+
+.td-dining-place-address a:hover {
+  color: var(--td-pink);
+}
+
+.td-place-row-selectable {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.td-place-row-selectable:hover {
+  border-color: rgba(172, 133, 233, 0.55);
+  box-shadow: 0 2px 10px rgba(172, 133, 233, 0.18);
+}
+
+.td-place-row-active {
+  border-color: var(--td-purple) !important;
+  box-shadow: 0 0 0 2px rgba(172, 133, 233, 0.25);
+}
+
+@media (max-width: 991.98px) {
+  .td-dining-places-list-wrap {
+    max-height: 20rem;
+  }
+
+  .td-gmap-iframe {
+    min-height: 18rem;
+    height: 18rem;
+  }
+}
+
 .td-out-accent-essential .card-header {
   background: linear-gradient(90deg, rgba(1, 225, 242, 0.2), rgba(253, 225, 100, 0.15)) !important;
   color: var(--td-text) !important;

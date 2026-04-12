@@ -1,4 +1,4 @@
-The **first** diagram is the **target** pipeline (multi-agent orchestration, RAG, external tools). The **second** diagram is the **current** Shiny prototype (single LLM call, Supabase, injected architecture context).
+The **first** diagram is the **target** pipeline (multi-agent orchestration, RAG, external tools). The **second** diagram is the **current** Shiny app data flow (Supabase, optional Google Places + embedding RAG, Ollama, injected architecture context).
 
 #### Target pipeline (agentic orchestration, RAG, tool calling)
 
@@ -52,7 +52,12 @@ flowchart TB
 
 #### Current implementation (Shiny prototype — data flow)
 
-What runs today: one **Ollama Cloud** chat completion per **Generate** click; **no** separate agent processes, **no** vector RAG index. `docs/architecture.md` is loaded **in full** as static system context (prompt injection), not retrieved by similarity search.
+What runs today on **Generate**:
+
+1. **Travel friendliness** — World Bank indicators (deterministic; not from the LLM).
+2. **Agent 1** (optional, when `GOOGLE_PLACES_API_KEY` is set) — **Places API (New)** Text Search for restaurants near the destination, then **embedding RAG** (`sentence-transformers` MiniLM) to rank candidates against a preference narrative, plus Place Details (address, reviews snippets, **price level**, coordinates). A second search query can incorporate **food-like** free text (e.g. “beef noodle”) to widen retrieval.
+3. **Agent 2** — One **Ollama Cloud** chat completion: system message includes `docs/architecture.md` and JSON rules; user message includes `trip_and_food` and the **`agent1_restaurants`** list when present. The model returns JSON for **dishes** (price tier `$` / `$$` / `$$$`), **places** (must use retrieved venue names), **essential** blurbs, and illustrative friendliness fields (the UI ignores LLM friendliness in favor of World Bank scores).
+4. **Maps Embed API** — embedded map for the selected recommended place (browser loads the iframe; same API key as Places).
 
 ```mermaid
 flowchart LR
@@ -64,16 +69,21 @@ flowchart LR
     subgraph server [Python server]
         Ctx[build_trip_context]
         Arch[load_architecture_markdown]
-        Prompt[System + user JSON prompt]
+        A1[Agent 1: Places + embedding RAG]
+        Prompt[System + user JSON + restaurants]
     end
     SB[(Supabase REST)]
-    Ollama[[Ollama Cloud API /api/chat]]
+    GPlaces[[Google Places API New]]
+    Ollama[[Ollama Cloud /api/chat]]
     Form --> Ctx
+    Btn --> A1
     Btn --> Prompt
+    A1 --> GPlaces
+    A1 --> Prompt
     Arch --> Prompt
     Ctx --> Prompt
     Prompt --> Ollama
-    Ollama -->|JSON in reply| Out[Dining / Essential / Friendliness UI]
+    Ollama -->|JSON plan| Out[Dishes / Places+map / Essential / Friendliness]
     Save --> SB
     SB -->|Recent rows| Table[Preferences table]
 ```
