@@ -4,7 +4,11 @@
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import re
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import numpy as np
@@ -23,6 +27,36 @@ def _get_embed_model():
 
         _embed_model = SentenceTransformer(_EMBED_MODEL_NAME)
     return _embed_model
+
+
+def warm_embedding_model() -> None:
+    """Eager-load sentence-transformers (e.g. daemon thread at app startup)."""
+    _get_embed_model()
+
+
+_PLACE_DETAIL_CACHE: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
+_PLACE_DETAIL_CACHE_MAX = 200
+
+
+def _api_key_fingerprint(api_key: str | None) -> str:
+    k = (api_key or "").strip().encode("utf-8")
+    if not k:
+        return "none"
+    return hashlib.sha256(k).hexdigest()[:16]
+
+
+def _get_place_details_cached(resource: str, *, api_key: str | None) -> dict[str, Any]:
+    res = (resource or "").strip()
+    fp = _api_key_fingerprint(api_key)
+    key = (res, fp)
+    if key in _PLACE_DETAIL_CACHE:
+        _PLACE_DETAIL_CACHE.move_to_end(key)
+        return copy.deepcopy(_PLACE_DETAIL_CACHE[key])
+    detail = places.get_place_details(resource, api_key=api_key)
+    while len(_PLACE_DETAIL_CACHE) >= _PLACE_DETAIL_CACHE_MAX:
+        _PLACE_DETAIL_CACHE.popitem(last=False)
+    _PLACE_DETAIL_CACHE[key] = copy.deepcopy(detail)
+    return copy.deepcopy(detail)
 
 
 def _embed_texts(texts: list[str]) -> np.ndarray:
@@ -278,7 +312,7 @@ def run_agent1_places_rag(
     preference_narrative: str,
     api_key: str | None = None,
     top_k: int = 5,
-    search_page_size: int = 20,
+    search_page_size: int = 12,
 ) -> tuple[list[dict[str, Any]], str | None]:
     """
     Retrieve restaurant Places, rank by embedding similarity to preference + destination (RAG retrieval).
@@ -301,18 +335,25 @@ def run_agent1_places_rag(
 
     batches: list[list[dict[str, Any]]] = []
     search_err: str | None = None
-    for tq in text_queries:
+
+    def _search_one(tq: str) -> tuple[list[dict[str, Any]], str | None]:
         try:
-            batches.append(
+            return (
                 places.search_restaurants(
                     tq,
                     api_key=api_key,
                     page_size=search_page_size,
-                )
+                ),
+                None,
             )
         except Exception as e:
-            search_err = str(e)
-            batches.append([])
+            return [], str(e)
+
+    with ThreadPoolExecutor(max_workers=max(1, len(text_queries))) as pool:
+        for batch, err in pool.map(_search_one, text_queries):
+            batches.append(batch)
+            if err:
+                search_err = err
 
     raw_places = _merge_places_by_resource(batches)
     if not raw_places and search_err:
@@ -347,20 +388,33 @@ def run_agent1_places_rag(
             continue
         seen.add(resource)
         ordered_names.append((resource, float(scores[idx])))
-        if len(ordered_names) >= max(top_k * 3, top_k):
+        if len(ordered_names) >= max(top_k * 2, top_k):
             break
+
+    def _detail_one(resource: str, sc: float) -> tuple[str, float, dict[str, Any] | None, str | None]:
+        try:
+            return resource, sc, _get_place_details_cached(resource, api_key=api_key), None
+        except Exception as e:
+            return resource, sc, None, str(e)
+
+    n_detail_workers = min(8, max(1, len(ordered_names)))
+    by_resource: dict[str, tuple[dict[str, Any] | None, str | None]] = {}
+    res_ids = [r for r, _ in ordered_names]
+    res_scores = [s for _, s in ordered_names]
+    with ThreadPoolExecutor(max_workers=n_detail_workers) as pool:
+        for resource, sc, detail, err in pool.map(_detail_one, res_ids, res_scores):
+            by_resource[resource] = (detail, err)
 
     candidates: list[dict[str, Any]] = []
     errors: list[str] = []
     for resource, sc in ordered_names:
         if len(candidates) >= top_k:
             break
-        try:
-            detail = places.get_place_details(resource, api_key=api_key)
-        except Exception as e:
-            errors.append(str(e))
-            continue
-        candidates.append(_candidate_from_detail(detail, rag_score=sc))
+        detail, err = by_resource.get(resource, (None, None))
+        if detail is not None:
+            candidates.append(_candidate_from_detail(detail, rag_score=sc))
+        elif err:
+            errors.append(err)
 
     if not candidates and errors:
         return [], f"Place details failed: {errors[0]}"

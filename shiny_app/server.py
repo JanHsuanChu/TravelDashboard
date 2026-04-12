@@ -5,7 +5,17 @@ from __future__ import annotations
 
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from urllib.parse import quote
+
+from dotenv import load_dotenv
+
+# Load .env before reading TD_* / API keys. Repo-root .env then shiny_app/.env (later wins).
+_SHINY_APP_DIR = Path(__file__).resolve().parent
+for _env_path in (_SHINY_APP_DIR.parent / ".env", _SHINY_APP_DIR / ".env"):
+    if _env_path.is_file():
+        load_dotenv(_env_path, override=True)
 
 from shiny import reactive, render, ui
 
@@ -33,6 +43,31 @@ from travel_friendliness.pipeline import FriendlinessResult, compute_friendlines
 from validators import validate_food_text, validate_when_mode, valid_email_shape
 
 
+def _travel_friendliness_disabled() -> bool:
+    """Skip World Bank + optional report LLM when TD_DISABLE_TRAVEL_FRIENDLINESS is truthy."""
+    v = (os.environ.get("TD_DISABLE_TRAVEL_FRIENDLINESS") or "").strip()
+    if v.startswith("\ufeff"):
+        v = v.lstrip("\ufeff").strip()
+    v = v.strip('"').strip("'").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def _light_arch_context_enabled() -> bool:
+    """Shorter system prompt for Agent 2 when TD_LIGHT_ARCH_CONTEXT is truthy."""
+    v = (os.environ.get("TD_LIGHT_ARCH_CONTEXT") or "").strip().strip('"').strip("'").lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def _architecture_for_plan_llm() -> str:
+    if _light_arch_context_enabled():
+        return (
+            "Travel Dashboard (Shiny): Agent 1 may supply Google Places restaurants + RAG scores. "
+            "You are Agent 2: return only the JSON shape from the system rules. "
+            "friendliness fields in JSON are ignored by the UI (scores come from World Bank)."
+        )
+    return load_architecture_markdown()
+
+
 def _as_tag_list(val) -> list:
     if val is None:
         return []
@@ -42,7 +77,6 @@ def _as_tag_list(val) -> list:
 
 
 _DECIMAL_MATCH_BADGE_RE = re.compile(r"^(\d*\.?\d+)\s+match$", re.IGNORECASE)
-
 
 def _format_dining_match_badge(badge: str | None) -> str:
     """Show RAG-style scores as percentages (0.48 match → 48% match)."""
@@ -569,147 +603,169 @@ def server(input, output, session):
             ui.notification_show(ui.span(err), type="error", session=session)
             return
 
-        fr = compute_friendliness(
-            dc,
-            (input.cmp1_country() or "").strip(),
-            (input.cmp2_country() or "").strip(),
-        )
-        friendliness_state.set(fr)
-        if not fr.ok and fr.error_message:
-            ui.notification_show(
-                ui.span(f"Travel friendliness: {fr.error_message}"),
-                type="warning",
-                session=session,
+        cmp1_c = (input.cmp1_country() or "").strip()
+        cmp2_c = (input.cmp2_country() or "").strip()
+
+        friend_pool: ThreadPoolExecutor | None = None
+        fr_fut = None  # Future from background compute_friendliness when enabled
+        if _travel_friendliness_disabled():
+            friendliness_state.set(
+                FriendlinessResult(
+                    ok=False,
+                    error_message=(
+                        "Travel friendliness is disabled (TD_DISABLE_TRAVEL_FRIENDLINESS). "
+                        "Remove or unset that variable to restore World Bank scores and the HTML report."
+                    ),
+                )
+            )
+        else:
+            friend_pool = ThreadPoolExecutor(max_workers=1)
+            fr_fut = friend_pool.submit(compute_friendliness, dc, cmp1_c, cmp2_c)
+
+        try:
+            skipped_persist = not _identity_complete(input)
+            if not skipped_persist:
+                try:
+                    _persist_preferences(input)
+                except Exception as e:
+                    ui.notification_show(
+                        ui.span(f"Could not save preferences before generating: {e}"),
+                        type="error",
+                        session=session,
+                    )
+                    return
+
+            ctx = build_trip_context(
+                {
+                    "dest_country": input.dest_country(),
+                    "dest_city": input.dest_city(),
+                    "cmp1_country": input.cmp1_country(),
+                    "cmp1_city": input.cmp1_city(),
+                    "cmp2_country": input.cmp2_country(),
+                    "cmp2_city": input.cmp2_city(),
+                    "when_mode": wm,
+                    "when_season": ws,
+                    "when_month": wmth,
+                    "like_tags": _as_tag_list(input.like_tags()),
+                    "dislike_tags": _as_tag_list(input.dislike_tags()),
+                    "dietary_tags": _as_tag_list(input.dietary_tags()),
+                    "food_like_text": input.food_like_text(),
+                    "food_dislike_text": input.food_dislike_text(),
+                    "dietary_restrictions_text": input.dietary_restrictions_text(),
+                }
             )
 
-        skipped_persist = not _identity_complete(input)
-        if not skipped_persist:
+            dest_label = ", ".join(
+                p
+                for p in (
+                    (input.dest_city() or "").strip(),
+                    (input.dest_country() or "").strip(),
+                )
+                if p
+            )
+            dining_badge_state.set(
+                (input.dest_city() or "").strip() or (input.dest_country() or "").strip() or "Destination"
+            )
+
+            trip_food_narrative = preference_narrative_from_trip_food(ctx["food"])
+            pref_narrative = trip_food_narrative
+            if _identity_complete(input):
+                try:
+                    _, pref_row = fetch_user_and_latest_preference(normalize_email(input.user_email()))
+                    db_narrative = preference_narrative_from_supabase_row(pref_row).strip()
+                    if db_narrative:
+                        # Trip-first so current checkboxes (e.g. vegetarian) always influence RAG, even if DB is stale.
+                        pref_narrative = " ".join(
+                            x for x in (trip_food_narrative.strip(), db_narrative) if x
+                        ).strip()
+                except Exception:
+                    pass
+            if not pref_narrative.strip():
+                pref_narrative = trip_food_narrative
+
+            places_error_state.set("")
+            agent1_candidates: list = []
+            if os.environ.get("GOOGLE_PLACES_API_KEY", "").strip():
+                agent1_candidates, rag_err = run_agent1_places_rag(
+                    destination_label=dest_label or (input.dest_country() or "").strip(),
+                    preference_narrative=pref_narrative,
+                )
+                if rag_err:
+                    places_error_state.set(rag_err)
+                    ui.notification_show(
+                        ui.span(
+                            "Restaurant retrieval failed — full message is in the red box "
+                            "under Dining — recommended places (scroll if needed)."
+                        ),
+                        type="warning",
+                        duration=12,
+                        session=session,
+                    )
+
+            arch = _architecture_for_plan_llm()
+            system_parts = [
+                f"Architecture context:\n\n{arch}\n\n{SYSTEM_JSON_INSTRUCTION}",
+            ]
+            if agent1_candidates:
+                system_parts.append(AGENT2_DINING_GROUNDING.strip())
+            messages = [
+                {"role": "system", "content": "\n\n".join(system_parts)},
+                {
+                    "role": "user",
+                    "content": user_prompt_from_context(ctx, agent1_candidates),
+                },
+            ]
             try:
-                _persist_preferences(input)
+                raw = ollama_chat(messages)
+                parsed = extract_json_object(raw)
+                if parsed and isinstance(parsed, dict):
+                    parsed = dict(parsed)
+                    parsed.pop("friendliness", None)
+                    plan_state.set(parsed)
+                    map_places_state.set(_markers_from_candidates(agent1_candidates))
+                    ui.update_text("map_place_pick", value="0", session=session)
+                    if skipped_persist:
+                        ui.notification_show(
+                            ui.span(
+                                "Recommendations updated. Add your first name and email to save these preferences for next time.",
+                            ),
+                            type="message",
+                            session=session,
+                        )
+                    else:
+                        msg = (
+                            "Updated outputs (dining uses Google Places + RAG when configured)."
+                            if agent1_candidates
+                            else "Updated outputs from model."
+                        )
+                        ui.notification_show(ui.span(msg), type="message", session=session)
+                else:
+                    ui.notification_show(
+                        ui.span("Model did not return valid JSON; showing previous outputs."),
+                        type="warning",
+                        session=session,
+                    )
             except Exception as e:
                 ui.notification_show(
-                    ui.span(f"Could not save preferences before generating: {e}"),
+                    ui.span(f"Generate failed (check OLLAMA_API_KEY): {e}"),
                     type="error",
                     session=session,
                 )
-                return
-
-        ctx = build_trip_context(
-            {
-                "dest_country": input.dest_country(),
-                "dest_city": input.dest_city(),
-                "cmp1_country": input.cmp1_country(),
-                "cmp1_city": input.cmp1_city(),
-                "cmp2_country": input.cmp2_country(),
-                "cmp2_city": input.cmp2_city(),
-                "when_mode": wm,
-                "when_season": ws,
-                "when_month": wmth,
-                "like_tags": _as_tag_list(input.like_tags()),
-                "dislike_tags": _as_tag_list(input.dislike_tags()),
-                "dietary_tags": _as_tag_list(input.dietary_tags()),
-                "food_like_text": input.food_like_text(),
-                "food_dislike_text": input.food_dislike_text(),
-                "dietary_restrictions_text": input.dietary_restrictions_text(),
-            }
-        )
-
-        dest_label = ", ".join(
-            p
-            for p in (
-                (input.dest_city() or "").strip(),
-                (input.dest_country() or "").strip(),
-            )
-            if p
-        )
-        dining_badge_state.set(
-            (input.dest_city() or "").strip() or (input.dest_country() or "").strip() or "Destination"
-        )
-
-        trip_food_narrative = preference_narrative_from_trip_food(ctx["food"])
-        pref_narrative = trip_food_narrative
-        if _identity_complete(input):
-            try:
-                _, pref_row = fetch_user_and_latest_preference(normalize_email(input.user_email()))
-                db_narrative = preference_narrative_from_supabase_row(pref_row).strip()
-                if db_narrative:
-                    # Trip-first so current checkboxes (e.g. vegetarian) always influence RAG, even if DB is stale.
-                    pref_narrative = " ".join(
-                        x for x in (trip_food_narrative.strip(), db_narrative) if x
-                    ).strip()
-            except Exception:
-                pass
-        if not pref_narrative.strip():
-            pref_narrative = trip_food_narrative
-
-        places_error_state.set("")
-        agent1_candidates: list = []
-        if os.environ.get("GOOGLE_PLACES_API_KEY", "").strip():
-            agent1_candidates, rag_err = run_agent1_places_rag(
-                destination_label=dest_label or (input.dest_country() or "").strip(),
-                preference_narrative=pref_narrative,
-            )
-            if rag_err:
-                places_error_state.set(rag_err)
-                ui.notification_show(
-                    ui.span(
-                        "Restaurant retrieval failed — full message is in the red box "
-                        "under Dining — recommended places (scroll if needed)."
-                    ),
-                    type="warning",
-                    duration=12,
-                    session=session,
-                )
-
-        arch = load_architecture_markdown()
-        system_parts = [
-            f"Architecture context:\n\n{arch}\n\n{SYSTEM_JSON_INSTRUCTION}",
-        ]
-        if agent1_candidates:
-            system_parts.append(AGENT2_DINING_GROUNDING.strip())
-        messages = [
-            {"role": "system", "content": "\n\n".join(system_parts)},
-            {
-                "role": "user",
-                "content": user_prompt_from_context(ctx, agent1_candidates),
-            },
-        ]
-        try:
-            raw = ollama_chat(messages)
-            parsed = extract_json_object(raw)
-            if parsed and isinstance(parsed, dict):
-                parsed = dict(parsed)
-                parsed.pop("friendliness", None)
-                plan_state.set(parsed)
-                map_places_state.set(_markers_from_candidates(agent1_candidates))
-                ui.update_text("map_place_pick", value="0", session=session)
-                if skipped_persist:
+        finally:
+            if fr_fut is not None:
+                try:
+                    fr = fr_fut.result()
+                except Exception as e:
+                    fr = FriendlinessResult(ok=False, error_message=f"Travel friendliness error: {e}")
+                friendliness_state.set(fr)
+                if not fr.ok and fr.error_message:
                     ui.notification_show(
-                        ui.span(
-                            "Recommendations updated. Add your first name and email to save these preferences for next time.",
-                        ),
-                        type="message",
+                        ui.span(f"Travel friendliness: {fr.error_message}"),
+                        type="warning",
                         session=session,
                     )
-                else:
-                    msg = (
-                        "Updated outputs (dining uses Google Places + RAG when configured)."
-                        if agent1_candidates
-                        else "Updated outputs from model."
-                    )
-                    ui.notification_show(ui.span(msg), type="message", session=session)
-            else:
-                ui.notification_show(
-                    ui.span("Model did not return valid JSON; showing previous outputs."),
-                    type="warning",
-                    session=session,
-                )
-        except Exception as e:
-            ui.notification_show(
-                ui.span(f"Generate failed (check OLLAMA_API_KEY): {e}"),
-                type="error",
-                session=session,
-            )
+            if friend_pool is not None:
+                friend_pool.shutdown(wait=True)
 
     @render.ui
     def dining_dest_badge():

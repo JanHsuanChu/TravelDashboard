@@ -13,25 +13,39 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-OLLAMA_CHAT_URL = os.environ.get("OLLAMA_HOST", "https://ollama.com").rstrip("/") + "/api/chat"
-DEFAULT_MODEL = "gpt-oss:20b-cloud"
+_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "https://ollama.com").rstrip("/")
+OLLAMA_CHAT_URL = _OLLAMA_HOST + "/api/chat"
+
+# Faster default than 20B cloud; override with OLLAMA_MODEL (e.g. gpt-oss:20b-cloud for prior behavior).
+DEFAULT_CHAT_MODEL = "llama3.2:3b"
+
+
+def resolved_chat_model(explicit: str | None = None) -> str:
+    """Explicit arg wins, then OLLAMA_MODEL env, then DEFAULT_CHAT_MODEL."""
+    if explicit and str(explicit).strip():
+        return str(explicit).strip()
+    env = (os.environ.get("OLLAMA_MODEL") or "").strip()
+    return env or DEFAULT_CHAT_MODEL
 
 
 def ollama_chat(
     messages: list[dict[str, str]],
     *,
     model: str | None = None,
-    timeout: int = 180,
+    timeout: int = 120,
 ) -> str:
     key = os.environ.get("OLLAMA_API_KEY", "")
     if not key:
         raise ValueError("OLLAMA_API_KEY is not set.")
 
     body: dict[str, Any] = {
-        "model": model or DEFAULT_MODEL,
+        "model": resolved_chat_model(model),
         "messages": messages,
         "stream": False,
     }
+    np_raw = (os.environ.get("OLLAMA_NUM_PREDICT") or "").strip()
+    if np_raw.isdigit():
+        body["options"] = {"num_predict": int(np_raw)}
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",

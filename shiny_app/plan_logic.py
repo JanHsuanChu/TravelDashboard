@@ -43,55 +43,78 @@ def build_trip_context(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 SYSTEM_JSON_INSTRUCTION = """
-You are assisting with the Travel Dashboard described in the architecture context above.
-Return ONLY a single JSON object (no markdown fences) with this shape:
+You assist the Travel Dashboard. Return ONLY one JSON object (no markdown fences):
 {
   "dining": {
-    "dishes": [{"title": "...", "note": "...", "badge": "exactly one of: $ | $$ | $$$ (price tier for that dish)"}],
-    "places": [{"title": "...", "note": "...", "badge": "..."}]
+    "dishes": [{"title": "...", "note": "1 short sentence", "badge": "$ | $$ | $$$"}],
+    "places": [{"title": "...", "note": "1 short sentence", "badge": "..."}]
   },
   "essential": {
-    "travel_advisory": "paragraph",
-    "weather": "paragraph",
-    "news": "paragraph"
+    "travel_advisory": "≤2 short sentences",
+    "weather": "≤2 short sentences",
+    "news": "≤2 short sentences"
   },
   "friendliness": {
     "primary": {"score": 0-100, "label": "short"},
     "comparisons": [{"label": "country or city", "score": 0-100}]
   }
 }
-Use concise placeholder content if you lack real-time data. Scores are illustrative.
+Placeholder text is OK if live data unknown; keep everything brief. Scores are illustrative (UI may override).
 
-Dining — dietary compliance (always apply to "dining.dishes", even if other food fields conflict):
-- trip_and_food.food.dietary_tags and trip_and_food.food.dietary_restrictions are strict requirements, not loose hints. They override generic "likes" (e.g. do not suggest seafood if the traveler is vegetarian).
-- Vegetarian: no meat, poultry, fish, or shellfish; avoid dishes where those are central (broth, lard, fish sauce, etc. when relevant).
-- Vegan: only plant-based dishes; no meat, fish, dairy, eggs, or honey.
-- Halal / kosher / gluten-free: only recommend dishes that plausibly comply when those tags are present.
+Dining — dietary (strict on dining.dishes):
+- dietary_tags + dietary_restrictions override generic likes (e.g. no seafood if vegetarian).
+- Vegetarian / vegan / halal / kosher / gluten-free: only compliant dishes when those tags apply.
 """
 
 # Agent 2 (recommendation): dining must use Agent 1 retrieval from Google Places + user preferences.
 AGENT2_DINING_GROUNDING = """
-Agent pipeline: Agent 1 already retrieved real restaurants (Google Places) ranked for the user's food preferences.
-You are Agent 2 (recommendation engine).
+Agent 1 supplied real Google Places venues (preference-ranked). You are Agent 2.
 
-Rules for "dining":
-- "places": use ONLY venues from the provided agent1_restaurants list. Each item's "name" must appear as place "title" (exact string) for exactly one entry per chosen venue. Prefer up to 5 places; at least 3 when the list has 3+.
-- "dishes": recommend specific dishes or meal styles that fit the destination cuisine AND the user's food preferences, and map them to the vibe of those venues where possible (e.g. street food vs fine dining). Include 4–8 dishes total. Every dish must satisfy trip_and_food.food.dietary_tags and dietary_restrictions; if a venue is meat-heavy, suggest clearly vegetarian/vegan-safe options (sides, modified classics, or plant-forward local dishes) rather than defaulting to meat mains.
-- "dishes"[]."badge": REQUIRED — exactly one token: "$" (budget / street / simple), "$$" (mid-range / everyday sit-down), or "$$$" (upscale / fine-dining–style). Infer from typical local cost and setting for that dish; no other text, no "N/A", no percent match (dishes have no rag_match_score).
-- "places"[]."badge": when rag_match_score is present, echo as percent match (e.g. "89% match" from 0.89 — never "0.89 match"). The app also shows Google's price tier ($/$$/$$$) next to the match when available. Never "N/A". Omit dollar tiers from this field (price comes from Google).
-- "note": one or two sentences; for places, cite address or a review snippet when provided (do not invent ratings).
+"dining.places": ONLY names from agent1_restaurants; "title" = exact "name". Up to 5 places, ≥3 if list has 3+.
+"dining.dishes": 4–6 dishes, destination + preferences; respect dietary_tags/restrictions; meat-heavy venues → offer veg-safe options.
+"dishes"[].badge: exactly "$", "$$", or "$$$" only.
+"places"[].badge: if rag_match_score given, use percent (e.g. 0.89 → "89% match"); never raw decimals; no "$" here.
+"note": one tight sentence; places may use address or a provided review line only (no invented ratings).
 
-If agent1_restaurants is empty or missing, fall back to generic dining suggestions without claiming live place data.
+If agent1_restaurants is empty, generic dining only (no live-place claims).
 """
+
+
+def _trim_agent1_for_llm(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Smaller user message: fewer tokens to the plan model."""
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        es = (r.get("editorial_summary") or "")[:220]
+        snippets = r.get("review_snippets") or []
+        if isinstance(snippets, list):
+            sn = [str(s)[:140] for s in snippets[:2] if s]
+        else:
+            sn = []
+        out.append(
+            {
+                "name": r.get("name"),
+                "formatted_address": (r.get("formatted_address") or "")[:180],
+                "editorial_summary": es,
+                "review_snippets": sn,
+                "rag_match_score": r.get("rag_match_score"),
+            }
+        )
+    return out
 
 
 def user_prompt_from_context(ctx: dict[str, Any], agent1_restaurants: list[dict[str, Any]] | None = None) -> str:
     import json
 
-    payload: dict[str, Any] = {"trip_and_food": ctx, "agent1_restaurants": agent1_restaurants or []}
+    raw = agent1_restaurants or []
+    payload: dict[str, Any] = {
+        "trip_and_food": ctx,
+        "agent1_restaurants": _trim_agent1_for_llm(raw) if raw else [],
+    }
+    compact = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return (
-        "Using the following JSON, fill the required top-level JSON structure.\n"
-        "- trip_and_food: traveler destination, timing, and food preferences.\n"
-        "- agent1_restaurants: ranked restaurants from Google Places + embedding RAG (name, address, summaries, review_snippets, rag_match_score).\n\n"
-        + json.dumps(payload, indent=2)
+        "Fill the JSON schema from the system message using this data only.\n"
+        "trip_and_food = destination, timing, food prefs. agent1_restaurants = ranked venues (use names exactly).\n\n"
+        + compact
     )

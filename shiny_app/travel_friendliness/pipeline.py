@@ -10,6 +10,8 @@ from typing import Any
 
 import pandas as pd
 
+from ollama_client import OLLAMA_CHAT_URL, resolved_chat_model
+
 from .country_resolve import resolve_country_to_wb_id
 from .report import build_report_markdown, markdown_to_html_document
 from .scoring import fetch_indicator_frame, score_dataset_with_reference_bounds
@@ -51,29 +53,30 @@ def _maybe_llm_report_narratives(
     payload: dict[str, Any],
 ) -> tuple[str | None, str | None]:
     """Optional LLM prose for report Purpose + Recommendations (50–100 words each)."""
+    skip = (os.getenv("TD_FRIENDLINESS_SKIP_REPORT_LLM") or "").strip().strip('"').strip("'").lower()
+    if skip in ("1", "true", "yes", "on"):
+        return None, None
     api_key = os.getenv("OLLAMA_API_KEY")
     if not api_key:
         return None, None
     try:
         import requests
 
-        url = "https://ollama.com/api/chat"
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        compact = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         prompt = (
-            "You are writing two sections for a travel analytics report. Use ONLY facts supported by the JSON; "
-            "do not invent indicator values or country names.\n\n"
-            "1) **Purpose** — 50 to 100 words: explain what this report compares and why World Bank indicators matter for travelers.\n"
-            "2) **Recommendations and conclusion** — 50 to 100 words: actionable takeaways comparing the destinations' scores.\n\n"
-            "Return valid JSON only with keys purpose and recommendations (strings). Example: "
-            '{"purpose":"...","recommendations":"..."}\n\n'
-            + json.dumps(payload, ensure_ascii=False, indent=2)
+            "Travel report helper. Use ONLY facts in the JSON; do not invent values or country names.\n\n"
+            "1) purpose — about 40–70 words: what this compares and why WB-style indicators matter to travelers.\n"
+            "2) recommendations — about 40–70 words: actionable comparison of destinations' scores.\n\n"
+            'Return JSON only: {"purpose":"...","recommendations":"..."}\n\n'
+            + compact
         )
         body = {
-            "model": os.getenv("OLLAMA_MODEL", "gpt-oss:20b-cloud"),
+            "model": resolved_chat_model(None),
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
         }
-        r = requests.post(url, headers=headers, json=body, timeout=90)
+        r = requests.post(OLLAMA_CHAT_URL, headers=headers, json=body, timeout=60)
         r.raise_for_status()
         js = r.json()
         text = js.get("message", {}).get("content") or ""

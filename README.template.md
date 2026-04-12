@@ -85,23 +85,24 @@ The content below is **generated** from [`docs/architecture.md`](docs/architectu
 | Piece | Responsibility |
 |-------|------------------|
 | **UI** ([`shiny_app/ui.py`](shiny_app/ui.py), [`shiny_app/components/`](shiny_app/components/)) | Plan form, outputs grid (dishes, essential, friendliness), full-width dining places + map. |
-| **Server** ([`shiny_app/server.py`](shiny_app/server.py)) | **Save** → Supabase user + preference; **Generate** → friendliness pipeline, optional Agent 1 Places RAG, build prompts, Ollama, parse JSON, map markers and embed URL. |
+| **Server** ([`shiny_app/server.py`](shiny_app/server.py)) | **Save** → Supabase user + preference; debounced-email preload; **Generate** → optional `TD_DISABLE_TRAVEL_FRIENDLINESS`, friendliness thread + optional save + Agent 1 + Ollama, strip `friendliness` from plan JSON, map markers and embed URL. |
+| **`validators`** ([`shiny_app/validators.py`](shiny_app/validators.py)) | Food text, when-mode (season/month), and email shape checks for Save / Generate. |
 | **`plan_logic`** ([`shiny_app/plan_logic.py`](shiny_app/plan_logic.py)) | `build_trip_context`, user/system JSON instructions (dietary rules, dish `$`/`$$`/`$$$`, place alignment to Agent 1). |
 | **`restaurant_rag`** ([`shiny_app/restaurant_rag.py`](shiny_app/restaurant_rag.py)) | Preference narrative → Places search (generic + food-hint query), embed query and place blurbs, cosine rank, Place Details, `price_tier` + `rag_match_score` on candidates. |
 | **`google_places_client`** ([`shiny_app/google_places_client.py`](shiny_app/google_places_client.py)) | Places API (New): `searchText`, GET Place Details, field masks. |
-| **`context`** ([`shiny_app/context.py`](shiny_app/context.py)) | Loads `docs/architecture.md` for the system prompt. |
+| **`context`** ([`shiny_app/context.py`](shiny_app/context.py)) | Reads repo-root [`docs/architecture.md`](docs/architecture.md) for the plan LLM when the server uses full architecture context (bypassed when `TD_LIGHT_ARCH_CONTEXT` supplies a short stub). |
 | **`supabase_client`** ([`shiny_app/supabase_client.py`](shiny_app/supabase_client.py)) | Supabase client, users, preferences. |
 | **`ollama_client`** ([`shiny_app/ollama_client.py`](shiny_app/ollama_client.py)) | Ollama Cloud chat + JSON extraction. |
 | **`travel_friendliness`** ([`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/)) | World Bank fetch, scoring, HTML report. |
 
-**Workflow (high level):** On **Generate**, World Bank friendliness runs first. If `GOOGLE_PLACES_API_KEY` is set, **Agent 1** fetches and ranks restaurants, then **Agent 2** (Ollama) receives `trip_and_food` + `agent1_restaurants` and returns JSON. The UI merges place rows with coordinates, shows **% match · $tier** from server data when available, and embeds the map. **Architecture.md** is still injected as system context.
+**Workflow (high level):** On **Generate**, **travel friendliness** is submitted on a **background thread** (unless `TD_DISABLE_TRAVEL_FRIENDLINESS`) while the server may auto-save prefs, run **Agent 1** (if `GOOGLE_PLACES_API_KEY`), and call **Ollama** for the plan JSON. The handler waits for both the LLM response and the friendliness future before updating the UI. If the Places key is set, **Agent 2** receives `agent1_restaurants`. The UI merges place rows with coordinates, shows **% match · $tier** when available, and embeds the map. System context is **full `docs/architecture.md`** or a **short stub** when `TD_LIGHT_ARCH_CONTEXT` is set.
 
 #### RAG and tool implementation
 
 | Topic | Implementation today | Roadmap (aligned with target diagram) |
 |-------|----------------------|----------------------------------------|
 | **RAG (restaurants)** | **Embedding retrieval** over **Places Text Search** results (name, address, types, editorial summary, rating line). Review text is **not** embedded for ranking; snippets are passed to the LLM after ranking. Optional **keyword overlap** boost from “food I like” tokens. | Richer signals (menus if licensed), multi-query fusion, optional re-rank with reviews. |
-| **Architecture “RAG”** | Full [`docs/architecture.md`](docs/architecture.md) in the **system** message (static injection). | Same. |
+| **Architecture “RAG”** | Full [`docs/architecture.md`](docs/architecture.md) via [`shiny_app/context.py`](shiny_app/context.py), **or** a short in-code stub when `TD_LIGHT_ARCH_CONTEXT` is set ([`shiny_app/server.py`](shiny_app/server.py)). | Same. |
 | **Tool calling** | **No** LLM-invoked tools; Places and World Bank are **server-orchestrated** HTTP calls. | Model-driven tool use if product needs it. |
 
 If you add tools later, document **name**, **purpose**, **parameters**, and **return shape** here and in code docstrings.
@@ -115,7 +116,12 @@ If you add tools later, document **name**, **purpose**, **parameters**, and **re
 | `SUPABASE_URL` | Yes (save / load) | Supabase project URL. |
 | `SUPABASE_KEY` | Yes (save / load) | JWT-style API key (`eyJ…`) for `app_user` / `preference` (see `.env.example` for legacy key note). |
 | `OLLAMA_API_KEY` | Yes (**Generate**) | Bearer token for Ollama Cloud. |
-| `OLLAMA_HOST` | No | Base URL for the API (default `https://ollama.com/api/chat`). |
+| `OLLAMA_HOST` | No | API host only (default `https://ollama.com`); the client posts to `{host}/api/chat`. |
+| `OLLAMA_MODEL` | No | Chat model for the plan JSON and the optional friendliness-report LLM (default `llama3.2:3b`). |
+| `OLLAMA_NUM_PREDICT` | No | Optional cap on completion tokens for the **main** plan call (`ollama_client`). |
+| `TD_DISABLE_TRAVEL_FRIENDLINESS` | No | When truthy, skips the World Bank friendliness thread during **Generate** (UI shows a disabled message; dining still runs). |
+| `TD_FRIENDLINESS_SKIP_REPORT_LLM` | No | When truthy, keeps World Bank scores and HTML report shell but skips the **extra** Ollama call for report Purpose/Recommendations prose. |
+| `TD_LIGHT_ARCH_CONTEXT` | No | When truthy, uses a short system stub instead of loading full `docs/architecture.md` for the plan model. |
 | `GOOGLE_PLACES_API_KEY` | No† | Agent 1 restaurant retrieval, Google **price level** on places, **RAG % match** from retrieval scores, and **Maps Embed** iframe. |
 
 †**Why “No”?** The Shiny app **starts** and **Generate** still works without this key: you get LLM-written **dishes**, **essential** text, and **travel friendliness** (World Bank). You do **not** get real venue lookup, the **embedded map**, or server-backed **% match · $** on recommended places—those need `GOOGLE_PLACES_API_KEY`. Treat it as **required** if you want the full dining + map experience described in this README.
@@ -153,7 +159,7 @@ Use **one Google Cloud project** and **one API key** for both server-side Places
 
 **Repository layout:**
 
-- **Shiny app:** [`shiny_app/`](shiny_app/) — `app.py`, `ui.py`, `server.py`, `plan_logic.py`, `restaurant_rag.py`, `google_places_client.py`, `components/`, `www/custom.css`
+- **Shiny app:** [`shiny_app/`](shiny_app/) — `app.py` (entrypoint; background warm of `all-MiniLM-L6-v2`), `ui.py`, `server.py`, `plan_logic.py`, `restaurant_rag.py`, `google_places_client.py`, `context.py`, `validators.py`, `supabase_client.py`, `ollama_client.py`, `components/`, `www/custom.css`
 - **SQL:** [`supabase/migrations/`](supabase/migrations/)
 - **Docs / prompt context:** [`docs/architecture.md`](docs/architecture.md)
 
