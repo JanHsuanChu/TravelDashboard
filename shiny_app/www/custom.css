@@ -13,13 +13,67 @@
   --td-text-muted: #6b5f7e;
 }
 
-/* Host for HTML5 datalist (options are not visible; keeps list in DOM for country fields). */
-.td-wb-datalist-host {
+/* Strict country combobox + city hints (trip fields) */
+.td-country-combo {
+  position: relative;
+}
+
+ul.td-country-dd {
   position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 40;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--td-card-bg);
+  border: 1px solid var(--td-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(45, 27, 78, 0.12);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+ul.td-country-dd li.td-country-dd-item {
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--td-text);
+}
+
+ul.td-country-dd li.td-country-dd-item:hover {
+  background: rgba(172, 133, 233, 0.12);
+}
+
+.td-city-field-col .td-city-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.td-city-hint-btn {
+  font-size: 0.72rem !important;
+  padding: 0.15rem 0.45rem !important;
+  border-radius: 0.35rem !important;
+  border: 1px solid var(--td-border) !important;
+  background: rgba(172, 133, 233, 0.08) !important;
+  color: var(--td-text) !important;
+}
+
+.td-country-chip-wrap,
+.td-country-chip-host {
+  margin-bottom: 0.35rem;
+  min-height: 0;
+}
+
+.td-city-hints-host {
+  min-height: 0;
+}
+
+.td-country-chip-btn {
+  font-size: 0.8rem !important;
 }
 
 .td-page,
@@ -111,32 +165,6 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--td-text);
-}
-
-.td-nav-links {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.td-nav-link {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--td-text-muted);
-  text-decoration: none;
-}
-
-.td-nav-link:hover {
-  color: var(--td-purple);
-}
-
-.td-nav-avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  background: linear-gradient(145deg, var(--td-soft), var(--td-cyan));
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px var(--td-border);
 }
 
 /* --- Shell --- */
@@ -281,6 +309,23 @@
     var(--td-yellow) 68%,
     var(--td-cyan) 100%
   );
+}
+
+.td-food-preferences-header-with-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 2px solid rgba(172, 133, 233, 0.35);
+  margin-bottom: 0.35rem;
+}
+
+.td-food-preferences-header-with-note .td-food-row-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0 !important;
 }
 
 .td-food-row-title {
@@ -608,6 +653,26 @@
   font-weight: 600;
 }
 
+.td-dining-places-header-with-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  width: 100%;
+}
+
+.td-dining-maps-disclaimer {
+  margin: 0 !important;
+  font-size: 0.65rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--td-text-muted);
+  max-width: 20rem;
+  text-align: right;
+  flex: 1 1 12rem;
+}
+
 .td-dining-places-split {
   padding: 0 0.35rem 0.85rem;
   min-height: 0;
@@ -714,6 +779,105 @@
   color: var(--td-text) !important;
   border-bottom: 2px solid var(--td-cyan) !important;
   font-weight: 600;
+}
+
+.td-out-accent-essential .card-body {
+  padding: 0.65rem 0.75rem !important;
+}
+
+/* Essential info: dense body + section titles aligned with Travel friendliness labels */
+.td-out-accent-essential .td-essential-body {
+  font-size: 0.8125rem;
+  line-height: 1.32;
+  color: var(--td-text);
+  letter-spacing: 0.01em;
+}
+
+.td-out-accent-essential .td-essential-body h3 {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--td-text-muted);
+  margin: 0 0 0.28rem;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.td-out-accent-essential .td-essential-body h3:not(:first-child) {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--td-border);
+}
+
+.td-out-accent-essential .td-essential-body p {
+  margin: 0 0 0.3rem;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.td-out-accent-essential .td-essential-body p:last-child {
+  margin-bottom: 0;
+}
+
+.td-out-accent-essential .td-essential-body em,
+.td-out-accent-essential .td-essential-body i {
+  color: var(--td-text-muted);
+}
+
+.td-out-accent-essential .td-essential-body strong {
+  font-weight: 600;
+  color: var(--td-text);
+}
+
+/* U.S. advisory level hero (HTML from us_travel_advisory._level_display_line; mirrors friendliness hero) */
+.td-out-accent-essential .td-essential-body .td-advisory-hero {
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.15rem;
+}
+
+.td-out-accent-essential .td-essential-body .td-advisory-hero-kicker {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--td-text-muted);
+  margin-bottom: 0.12rem;
+}
+
+.td-out-accent-essential .td-essential-body .td-advisory-hero-level {
+  font-size: 2.65rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #0d9488;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.td-out-accent-essential .td-essential-body .td-advisory-hero-caption {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--td-text);
+  margin-top: 0.12rem;
+  line-height: 1.35;
+  max-width: 36rem;
+}
+
+/* U.S. advisory cache / stale: blockquotes inside Essential only */
+.td-out-accent-essential .td-essential-body blockquote {
+  margin: 0 0 0.28rem;
+  padding: 0.1rem 0 0.1rem 0.45rem;
+  border-left: 2px solid rgba(1, 225, 242, 0.45);
+  font-size: 0.62rem;
+  line-height: 1.3;
+  color: var(--td-text-muted);
+  font-weight: 400;
+}
+
+.td-out-accent-essential .td-essential-body blockquote p {
+  margin: 0;
+  font-size: inherit;
+  color: inherit;
 }
 
 .td-out-accent-friendliness .card-header {

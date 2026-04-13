@@ -10,7 +10,7 @@ from typing import Any
 
 import pandas as pd
 
-from ollama_client import OLLAMA_CHAT_URL, resolved_chat_model
+from ollama_client import OLLAMA_CHAT_URL, resolved_model_other
 
 from .country_resolve import resolve_country_to_wb_id
 from .report import build_report_markdown, markdown_to_html_document
@@ -72,7 +72,7 @@ def _maybe_llm_report_narratives(
             + compact
         )
         body = {
-            "model": resolved_chat_model(None),
+            "model": resolved_model_other(),
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
         }

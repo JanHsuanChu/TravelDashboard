@@ -7,10 +7,13 @@ import validators as val
 def food_preference_combined_content():
     """Full-width row: three columns (like / dislike / dietary), tags + text per column."""
     return ui.div(
-        ui.p("Food preferences", class_="td-input-label td-food-row-title"),
-        ui.p(
-            f"Preset tags and detail (max {val.MAX_WORDS_FOOD_TEXT} words per box).",
-            class_="td-muted td-input-hint",
+        ui.div(
+            ui.p("Food preferences", class_="td-input-label td-food-row-title"),
+            ui.p(
+                "Recommendations are powered by Google Maps reviews.",
+                class_="td-dining-maps-disclaimer",
+            ),
+            class_="td-food-preferences-header-with-note",
         ),
         ui.layout_columns(
             ui.div(

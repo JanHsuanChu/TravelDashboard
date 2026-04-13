@@ -14,16 +14,52 @@ from supabase import Client, create_client
 from supabase.lib.client_options import SyncClientOptions
 
 _client: Client | None = None
+# Recreate client when URL or normalized key changes (fixes stale client after .env edits without restart).
+_client_env_sig: tuple[str, str] | None = None
+
+try:
+    from supabase._sync.client import SupabaseException as _SupabaseClientException
+except ImportError:  # pragma: no cover
+    _SupabaseClientException = Exception
 
 # supabase-py 2.15.x only accepts JWT-shaped keys (legacy anon / service_role). New dashboard keys
 # (sb_publishable_… / sb_secret_…) fail its local validation with "Invalid API key" before any HTTP call.
 # sb_secret_* also needs a non-browser User-Agent at the gateway; we set both via SyncClientOptions.
 _SERVER_UA = "TravelDashboard-Shiny/1.0 (Python; server; supabase-py)"
 
-# Mirrors supabase._sync.client.SyncClient __init__ check (so we can raise a clearer error).
-_SUPABASE_PY_JWT_KEY_RE = re.compile(
-    r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
-)
+
+def _normalize_supabase_key(raw: str) -> str:
+    """Strip BOM, wrapping quotes, whitespace, and invisible Unicode (common copy/paste from dashboards)."""
+    v = (raw or "").strip()
+    if v.startswith("\ufeff"):
+        v = v.lstrip("\ufeff").strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+        v = v[1:-1].strip()
+    # ZWSP/ZWJ/ZWNJ, BOM, NBSP, narrow NBSP, word joiner — can sit inside "eyJ" and break JWT checks.
+    v = re.sub(r"[\u200b-\u200d\ufeff\u00a0\u202f\u2060]+", "", v)
+    v = "".join(v.split())
+    return v
+
+
+def _supabase_key_hint(key: str) -> str:
+    """Non-secret hint so users can see what the process actually read."""
+    if not key:
+        return "The loaded SUPABASE_KEY is empty — check the file that wins last (see below)."
+    if key.startswith("eyJ"):
+        return (
+            "Key looks JWT-shaped (eyJ…) but the client still rejected it — often invisible characters "
+            "from copy/paste, a truncated line in .env, or a stale value until the server process restarts."
+        )
+    if key.startswith("sb_publishable"):
+        return (
+            "Loaded key is a new Publishable key (sb_publishable_…). This app needs the Legacy anon JWT (eyJ…). "
+            "Dashboard: Project Settings → API Keys → Legacy API keys → anon."
+        )
+    if key.startswith("sb_secret"):
+        return (
+            "Loaded key is a new Secret key (sb_secret_…). Use Legacy anon or service_role (eyJ…) for supabase-py."
+        )
+    return "Loaded key does not match a legacy JWT (expected a long anon or service_role value starting with eyJ)."
 
 
 def _load_dotenv() -> None:
@@ -41,27 +77,48 @@ def _env_clean(name: str) -> str:
 
 
 def get_supabase() -> Client:
-    global _client
+    global _client, _client_env_sig
     _load_dotenv()
-    if _client is None:
-        url = _env_clean("SUPABASE_URL").rstrip("/")
-        key = _env_clean("SUPABASE_KEY")
-        if not url or not key:
-            raise ValueError("Set SUPABASE_URL and SUPABASE_KEY in shiny_app/.env")
-        if not _SUPABASE_PY_JWT_KEY_RE.match(key):
-            raise ValueError(
-                "SUPABASE_KEY must be a legacy JWT (anon or service_role — usually starts with 'eyJ'). "
-                "The supabase-py version in this project does not accept new dashboard keys "
-                "(sb_publishable_… or sb_secret_…). In Supabase: Project Settings → API → "
-                "copy the anon (legacy) JWT, or service_role for server-only use."
-            )
-        opts = SyncClientOptions(
-            headers={
-                "User-Agent": _SERVER_UA,
-                "X-Client-Info": "travel-dashboard-shiny",
-            },
+    url = _env_clean("SUPABASE_URL").rstrip("/")
+    key = _normalize_supabase_key(_env_clean("SUPABASE_KEY"))
+    if not url or not key:
+        raise ValueError("Set SUPABASE_URL and SUPABASE_KEY in shiny_app/.env")
+
+    sig = (url, key)
+    if _client is not None and _client_env_sig == sig:
+        return _client
+
+    _client = None
+    _client_env_sig = None
+
+    if key.startswith(("sb_publishable_", "sb_secret_")):
+        raise ValueError(
+            "SUPABASE_KEY is a new-style Publishable/Secret key (sb_…). supabase-py needs the Legacy anon "
+            "or service_role JWT (starts with eyJ). Dashboard: Project Settings → API Keys → Legacy API keys. "
+            "https://supabase.com/docs/guides/api/api-keys#where-to-find-keys"
         )
+
+    opts = SyncClientOptions(
+        headers={
+            "User-Agent": _SERVER_UA,
+            "X-Client-Info": "travel-dashboard-shiny",
+        },
+    )
+    try:
         _client = create_client(url, key, opts)
+    except _SupabaseClientException as e:
+        msg = str(e).strip() or repr(e)
+        if "Invalid API key" in msg or "API key" in msg:
+            hint = _supabase_key_hint(key)
+            raise ValueError(
+                f"Supabase rejected this API key ({msg}). {hint} "
+                "If the key looks correct, re-copy the Legacy anon JWT from the dashboard (no spaces or line breaks), "
+                "save shiny_app/.env, and fully restart the Shiny process (not only browser refresh). "
+                "Parent-folder .env files load before shiny_app/.env — a blank or sb_* SUPABASE_KEY there can be "
+                "overridden only if this file defines SUPABASE_KEY on its own line."
+            ) from e
+        raise
+    _client_env_sig = sig
     return _client
 
 

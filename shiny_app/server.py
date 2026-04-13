@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -11,9 +12,13 @@ from urllib.parse import quote
 
 from dotenv import load_dotenv
 
-# Load .env before reading TD_* / API keys. Repo-root .env then shiny_app/.env (later wins).
+# Load .env before reading TD_* / API keys. Search upward so keys work from repo root or TravelDashboard/.
 _SHINY_APP_DIR = Path(__file__).resolve().parent
-for _env_path in (_SHINY_APP_DIR.parent / ".env", _SHINY_APP_DIR / ".env"):
+for _env_path in (
+    _SHINY_APP_DIR.parent.parent / ".env",
+    _SHINY_APP_DIR.parent / ".env",
+    _SHINY_APP_DIR / ".env",
+):
     if _env_path.is_file():
         load_dotenv(_env_path, override=True)
 
@@ -21,7 +26,7 @@ from shiny import reactive, render, ui
 
 import tags as tagdata
 from context import load_architecture_markdown
-from ollama_client import extract_json_object, ollama_chat
+from ollama_client import extract_json_object, ollama_chat, resolved_model_agent2
 from plan_logic import (
     AGENT2_DINING_GROUNDING,
     SYSTEM_JSON_INSTRUCTION,
@@ -39,8 +44,17 @@ from supabase_client import (
     insert_preference,
     normalize_email,
 )
+from iso2_bridge import friendliness_country_query, is_known_iso2
 from travel_friendliness.pipeline import FriendlinessResult, compute_friendliness
+from us_travel_advisory import (
+    build_travel_advisory_markdown,
+    get_advisory_snapshot,
+    match_advisory_row,
+    summarize_advisory_with_ollama,
+)
 from validators import validate_food_text, validate_when_mode, valid_email_shape
+
+logger = logging.getLogger(__name__)
 
 
 def _travel_friendliness_disabled() -> bool:
@@ -66,6 +80,17 @@ def _architecture_for_plan_llm() -> str:
             "friendliness fields in JSON are ignored by the UI (scores come from World Bank)."
         )
     return load_architecture_markdown()
+
+
+def _validate_trip_country_iso2(*, label: str, display_name: str, iso2: str) -> str | None:
+    """Return error message if a country field is partially filled without a valid list pick."""
+    d = (display_name or "").strip()
+    i = (iso2 or "").strip().upper()
+    if not d and not i:
+        return None
+    if len(i) != 2 or not is_known_iso2(i):
+        return f"{label}: choose a country from the suggestion list (typing alone is not enough)."
+    return None
 
 
 def _as_tag_list(val) -> list:
@@ -212,7 +237,6 @@ def _default_plan() -> dict:
         "essential": {
             "travel_advisory": "No live advisory feed yet.",
             "weather": "No live weather yet.",
-            "news": "No live headlines yet.",
         },
         "friendliness": {
             "primary": {"score": 0, "label": "Not computed"},
@@ -406,13 +430,21 @@ def _dining_places_list_ui(plan: dict, markers: list[dict], selected_idx: int) -
     return ui.div(*blocks, class_="td-dining-places-list-inner")
 
 
+def _essential_md_field(raw, *, default: str = "—") -> str:
+    """Model JSON often uses \"\" for missing text; .get(k, default) would not substitute."""
+    if raw is None:
+        return default
+    s = str(raw).strip()
+    return s if s else default
+
+
 def _format_essential(plan: dict) -> str:
     e = plan.get("essential") or {}
+    # Use ### so Essential card CSS can style section labels like Travel friendliness (.td-friendliness-section-label).
     return "\n\n".join(
         [
-            f"**Travel advisory**  \n{e.get('travel_advisory', '—')}",
-            f"**Weather**  \n{e.get('weather', '—')}",
-            f"**News**  \n{e.get('news', '—')}",
+            f"### Travel advisory\n\n{_essential_md_field(e.get('travel_advisory'))}",
+            f"### Weather\n\n{_essential_md_field(e.get('weather'))}",
         ]
     )
 
@@ -589,10 +621,17 @@ def server(input, output, session):
             ui.notification_show(ui.span(err), type="warning", session=session)
             return
 
-        dc = (input.dest_country() or "").strip()
-        if not dc:
+        dc_iso = (input.dest_country_iso2() or "").strip().upper()
+        dc_name = (input.dest_country() or "").strip()
+        err_trip = _validate_trip_country_iso2(
+            label="Destination country", display_name=dc_name, iso2=dc_iso
+        )
+        if err_trip:
+            ui.notification_show(ui.span(err_trip), type="warning", session=session)
+            return
+        if not dc_iso or len(dc_iso) != 2:
             ui.notification_show(
-                ui.span("Enter a destination country before generating."),
+                ui.span("Enter a destination country before generating (pick from the country list)."),
                 type="warning",
                 session=session,
             )
@@ -603,8 +642,22 @@ def server(input, output, session):
             ui.notification_show(ui.span(err), type="error", session=session)
             return
 
-        cmp1_c = (input.cmp1_country() or "").strip()
-        cmp2_c = (input.cmp2_country() or "").strip()
+        cmp1_name = (input.cmp1_country() or "").strip()
+        cmp1_iso = (input.cmp1_country_iso2() or "").strip().upper()
+        cmp2_name = (input.cmp2_country() or "").strip()
+        cmp2_iso = (input.cmp2_country_iso2() or "").strip().upper()
+        for lab, n, i in (
+            ("Compare 1 country", cmp1_name, cmp1_iso),
+            ("Compare 2 country", cmp2_name, cmp2_iso),
+        ):
+            e2 = _validate_trip_country_iso2(label=lab, display_name=n, iso2=i)
+            if e2:
+                ui.notification_show(ui.span(e2), type="warning", session=session)
+                return
+
+        dc = friendliness_country_query(dc_iso, dc_name)
+        cmp1_c = friendliness_country_query(cmp1_iso, cmp1_name) if cmp1_iso else ""
+        cmp2_c = friendliness_country_query(cmp2_iso, cmp2_name) if cmp2_iso else ""
 
         friend_pool: ThreadPoolExecutor | None = None
         fr_fut = None  # Future from background compute_friendliness when enabled
@@ -638,10 +691,13 @@ def server(input, output, session):
             ctx = build_trip_context(
                 {
                     "dest_country": input.dest_country(),
+                    "dest_country_iso2": input.dest_country_iso2(),
                     "dest_city": input.dest_city(),
                     "cmp1_country": input.cmp1_country(),
+                    "cmp1_country_iso2": input.cmp1_country_iso2(),
                     "cmp1_city": input.cmp1_city(),
                     "cmp2_country": input.cmp2_country(),
+                    "cmp2_country_iso2": input.cmp2_country_iso2(),
                     "cmp2_city": input.cmp2_city(),
                     "when_mode": wm,
                     "when_season": ws,
@@ -716,11 +772,41 @@ def server(input, output, session):
                 },
             ]
             try:
-                raw = ollama_chat(messages)
+                with ThreadPoolExecutor(max_workers=2) as _adv_pool:
+                    fut_plan = _adv_pool.submit(
+                        ollama_chat,
+                        messages,
+                        model=resolved_model_agent2(),
+                    )
+                    fut_snap = _adv_pool.submit(get_advisory_snapshot)
+                    raw = fut_plan.result()
+                    snap = fut_snap.result()
                 parsed = extract_json_object(raw)
                 if parsed and isinstance(parsed, dict):
                     parsed = dict(parsed)
                     parsed.pop("friendliness", None)
+                    matched = match_advisory_row(
+                        snap.rows,
+                        iso2=dc_iso,
+                        display_country=dc_name,
+                    )
+                    summary_advisory = ""
+                    if matched:
+                        try:
+                            summary_advisory = summarize_advisory_with_ollama(matched)
+                        except Exception as sum_exc:
+                            logger.warning("Travel advisory Ollama summary failed: %s", sum_exc)
+                    ess = parsed.get("essential")
+                    if not isinstance(ess, dict):
+                        ess = {}
+                    ess = dict(ess)
+                    ess.pop("news", None)
+                    ess["travel_advisory"] = build_travel_advisory_markdown(
+                        matched,
+                        snap,
+                        summary_advisory,
+                    )
+                    parsed["essential"] = ess
                     plan_state.set(parsed)
                     map_places_state.set(_markers_from_candidates(agent1_candidates))
                     ui.update_text("map_place_pick", value="0", session=session)

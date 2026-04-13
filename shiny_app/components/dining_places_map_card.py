@@ -5,7 +5,14 @@ def dining_places_map_output_ui():
     """Full-width row: recommended places list + Google Map."""
     return ui.card(
         ui.card_header(
-            ui.span("Dining — recommended places", class_="td-dining-places-card-title"),
+            ui.div(
+                ui.span("Dining — recommended places", class_="td-dining-places-card-title"),
+                ui.p(
+                    "Recommendations are powered by Google Maps reviews.",
+                    class_="td-dining-maps-disclaimer",
+                ),
+                class_="td-dining-places-header-with-note",
+            ),
         ),
         ui.div(ui.output_ui("places_retrieval_error"), class_="td-places-error-host"),
         ui.div(

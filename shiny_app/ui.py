@@ -1,6 +1,7 @@
 # ui.py
 # Travel Dashboard — mockup-aligned layout (nav, single Plan card, outputs grid).
 
+import json
 from pathlib import Path
 
 from shiny import ui
@@ -15,9 +16,15 @@ from components import (
     travel_friendliness_ui,
     when_fields_content,
 )
-from travel_friendliness.country_names_data import load_wb_country_names
-
 APP_ROOT = Path(__file__).resolve().parent
+
+# Inline RestCountries-derived list for Fuse (avoids fetch failures if /data/ is blocked or mis-routed).
+_COUNTRIES_SLIM_PATH = APP_ROOT / "www" / "data" / "countries_slim.json"
+_TD_COUNTRIES_EMBED_JS = ui.tags.script(
+    "window.__TD_COUNTRIES_SLIM__ = "
+    + json.dumps(json.loads(_COUNTRIES_SLIM_PATH.read_text(encoding="utf-8")), ensure_ascii=False)
+    + ";"
+)
 
 _INTER_FONT = ui.tags.link(
     rel="stylesheet",
@@ -103,30 +110,9 @@ _MAP_PLACE_ROW_CLICK_JS = ui.tags.script(
     """
 )
 
-_TD_COUNTRY_DATALIST_JS = ui.tags.script(
-    """
-    (function() {
-      function attachWbCountryDatalist() {
-        ['dest_country', 'cmp1_country', 'cmp2_country'].forEach(function(id) {
-          var el = document.getElementById(id);
-          if (el) el.setAttribute('list', 'td_wb_country_datalist');
-        });
-      }
-      document.addEventListener('shiny:connected', attachWbCountryDatalist);
-      window.addEventListener('shiny:connected', attachWbCountryDatalist);
-    })();
-    """
-)
-
-
-def _wb_country_datalist_ui():
-    names = load_wb_country_names()
-    if not names:
-        return ui.div()
-    return ui.tags.datalist(
-        *[ui.tags.option(value=n) for n in names],
-        id="td_wb_country_datalist",
-    )
+# Bundled Fuse (CDN can be blocked; must load before td_trip_fields.js).
+_FUSE_JS = ui.include_js(path=APP_ROOT / "www" / "vendor" / "fuse.min.js")
+_TRIP_FIELDS_JS = ui.include_js(path=APP_ROOT / "www" / "td_trip_fields.js")
 
 
 app_ui = ui.page_fillable(
@@ -135,20 +121,16 @@ app_ui = ui.page_fillable(
         ui.include_css(APP_ROOT / "www" / "custom.css"),
         _MAP_PLACE_ROW_CLICK_JS,
         _PREF_CLIENT_JS,
-        _TD_COUNTRY_DATALIST_JS,
+        _TD_COUNTRIES_EMBED_JS,
+        _FUSE_JS,
+        _TRIP_FIELDS_JS,
     ),
-    ui.div(_wb_country_datalist_ui(), class_="td-wb-datalist-host"),
     ui.div(
         ui.div(
             ui.div(
                 ui.span("T", class_="td-nav-logo"),
                 ui.span("Travel Dashboard", class_="td-nav-title"),
                 class_="td-nav-brand",
-            ),
-            ui.div(
-                ui.tags.a("Preferences", href="#plan", class_="td-nav-link"),
-                ui.span(class_="td-nav-avatar"),
-                class_="td-nav-links",
             ),
             class_="td-nav",
         ),
@@ -158,7 +140,7 @@ app_ui = ui.page_fillable(
                     ui.div(
                         ui.h2("Plan Your Trip", class_="td-plan-title"),
                         ui.p(
-                            "Enter your destination and preferences to generate a personalized itinerary.",
+                            "Enter your destination and preferences to generate a personalized recommendation.",
                             class_="td-plan-sub",
                         ),
                         class_="td-plan-header",

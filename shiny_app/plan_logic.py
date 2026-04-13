@@ -18,15 +18,18 @@ def build_trip_context(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "destination": {
             "country": inputs.get("dest_country"),
+            "country_iso2": inputs.get("dest_country_iso2"),
             "city": inputs.get("dest_city"),
         },
         "compare": [
             {
                 "country": inputs.get("cmp1_country"),
+                "country_iso2": inputs.get("cmp1_country_iso2"),
                 "city": inputs.get("cmp1_city"),
             },
             {
                 "country": inputs.get("cmp2_country"),
+                "country_iso2": inputs.get("cmp2_country_iso2"),
                 "city": inputs.get("cmp2_city"),
             },
         ],
@@ -50,9 +53,8 @@ You assist the Travel Dashboard. Return ONLY one JSON object (no markdown fences
     "places": [{"title": "...", "note": "1 short sentence", "badge": "..."}]
   },
   "essential": {
-    "travel_advisory": "≤2 short sentences",
-    "weather": "≤2 short sentences",
-    "news": "≤2 short sentences"
+    "travel_advisory": "≤2 short sentences (server may replace travel_advisory with live U.S. State Dept table + summary after Generate)",
+    "weather": "1–2 short sentences (see Essential — weather below)"
   },
   "friendliness": {
     "primary": {"score": 0-100, "label": "short"},
@@ -60,6 +62,11 @@ You assist the Travel Dashboard. Return ONLY one JSON object (no markdown fences
   }
 }
 Placeholder text is OK if live data unknown; keep everything brief. Scores are illustrative (UI may override).
+
+Essential — weather (strict on essential.weather):
+- **1–2 sentences only**, slightly shorter than a paragraph: typical conditions that help travelers **pack and plan** (layers, rain/heat/snow expectations). Illustrative climatology for the destination — **not** a live forecast.
+- **Mention the trip timing in the prose:** if `trip_and_food.when.mode` is `"season"`, name that **season** explicitly (e.g. winter / spring / summer / fall or Northern summer); if `"month"`, name that **calendar month** (e.g. "In **March**, …"). Tie conditions to that season or month so the reader sees which window you mean.
+- **Geography:** If `trip_and_food.destination.city` is empty or missing, summarize **country-level** climate for that country. If a **city** is present (e.g. Tokyo), include **both** country context and **city-relevant** notes (coastal vs inland, urban heat, rainy season timing) in the same 1–2 sentences. Do **not** leave `essential.weather` blank or whitespace-only.
 
 Dining — dietary (strict on dining.dishes):
 - dietary_tags + dietary_restrictions override generic likes (e.g. no seafood if vegetarian).
@@ -115,6 +122,8 @@ def user_prompt_from_context(ctx: dict[str, Any], agent1_restaurants: list[dict[
     compact = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return (
         "Fill the JSON schema from the system message using this data only.\n"
-        "trip_and_food = destination, timing, food prefs. agent1_restaurants = ranked venues (use names exactly).\n\n"
+        "trip_and_food = destination, timing, food prefs. agent1_restaurants = ranked venues (use names exactly).\n"
+        "essential.weather: non-empty string; if destination.city is absent/empty use country-only climate; "
+        "if city is set, combine country + city-relevant conditions in 1–2 sentences.\n\n"
         + compact
     )

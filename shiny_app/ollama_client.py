@@ -13,19 +13,65 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "https://ollama.com").rstrip("/")
+
+def _normalize_ollama_host(raw: str | None) -> str:
+    """Base URL only; client appends /api/chat. Strips accidental /api or /api/chat suffix (avoids 404)."""
+    h = (raw or "").strip().strip('"').strip("'").rstrip("/")
+    if not h:
+        return "https://ollama.com"
+    for suf in ("/api/chat", "/api"):
+        if h.lower().endswith(suf):
+            h = h[: -len(suf)].rstrip("/")
+    return h or "https://ollama.com"
+
+
+_OLLAMA_HOST = _normalize_ollama_host(os.environ.get("OLLAMA_HOST"))
 OLLAMA_CHAT_URL = _OLLAMA_HOST + "/api/chat"
 
-# Faster default than 20B cloud; override with OLLAMA_MODEL (e.g. gpt-oss:20b-cloud for prior behavior).
-DEFAULT_CHAT_MODEL = "llama3.2:3b"
+# Agent 2 = plan JSON (dining + essential scaffold). Agent 1 in this app = Places + embeddings only (no Ollama).
+DEFAULT_MODEL_AGENT2 = "nemotron-3-nano:30b-cloud"
+# Travel advisory micro-summary, friendliness HTML report prose, and any generic ollama_chat without an explicit model.
+DEFAULT_MODEL_OTHER = "gpt-oss:20b-cloud"
+
+
+def resolved_model_agent1() -> str:
+    """Reserved for a future Agent 1 LLM step. Today Agent 1 does not call Ollama (same tier as Agent 2 when added)."""
+    v = (os.environ.get("OLLAMA_MODEL_AGENT1") or "").strip()
+    if v:
+        return v
+    return resolved_model_agent2()
+
+
+def resolved_model_agent2() -> str:
+    """Plan LLM (Agent 2): main Generate JSON."""
+    v = (os.environ.get("OLLAMA_MODEL_AGENT2") or "").strip()
+    if v:
+        return v
+    v = (os.environ.get("OLLAMA_MODEL_AGENTS") or "").strip()
+    if v:
+        return v
+    return DEFAULT_MODEL_AGENT2
+
+
+def resolved_model_other() -> str:
+    """All non–Agent-2 chat calls (advisory blurb, friendliness report helper, etc.)."""
+    v = (os.environ.get("OLLAMA_MODEL_OTHER") or "").strip()
+    if v:
+        return v
+    v = (os.environ.get("OLLAMA_MODEL_AUXILIARY") or "").strip()
+    if v:
+        return v
+    v = (os.environ.get("OLLAMA_MODEL") or "").strip()
+    if v:
+        return v
+    return DEFAULT_MODEL_OTHER
 
 
 def resolved_chat_model(explicit: str | None = None) -> str:
-    """Explicit arg wins, then OLLAMA_MODEL env, then DEFAULT_CHAT_MODEL."""
+    """Backward-compatible alias: explicit wins; else auxiliary (OTHER) tier."""
     if explicit and str(explicit).strip():
         return str(explicit).strip()
-    env = (os.environ.get("OLLAMA_MODEL") or "").strip()
-    return env or DEFAULT_CHAT_MODEL
+    return resolved_model_other()
 
 
 def ollama_chat(
@@ -33,25 +79,40 @@ def ollama_chat(
     *,
     model: str | None = None,
     timeout: int = 120,
+    num_predict: int | None = None,
 ) -> str:
     key = os.environ.get("OLLAMA_API_KEY", "")
     if not key:
         raise ValueError("OLLAMA_API_KEY is not set.")
 
+    m = (model or "").strip() or resolved_model_other()
     body: dict[str, Any] = {
-        "model": resolved_chat_model(model),
+        "model": m,
         "messages": messages,
         "stream": False,
     }
-    np_raw = (os.environ.get("OLLAMA_NUM_PREDICT") or "").strip()
-    if np_raw.isdigit():
-        body["options"] = {"num_predict": int(np_raw)}
+    np_val: int | None = num_predict
+    if np_val is None:
+        np_raw = (os.environ.get("OLLAMA_NUM_PREDICT") or "").strip()
+        if np_raw.isdigit():
+            np_val = int(np_raw)
+    if np_val is not None:
+        body["options"] = {"num_predict": int(np_val)}
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
     resp = requests.post(OLLAMA_CHAT_URL, headers=headers, json=body, timeout=timeout)
-    resp.raise_for_status()
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        if resp.status_code == 404:
+            raise ValueError(
+                f"Ollama HTTP 404 for {OLLAMA_CHAT_URL!r}. If OLLAMA_HOST is set, use the base host only "
+                f"(e.g. https://ollama.com), not …/api or …/api/chat. "
+                f"Confirm the model name exists on that host (see OLLAMA_MODEL_AGENT2 / OLLAMA_MODEL_OTHER / OLLAMA_MODEL)."
+            ) from e
+        raise
     data = resp.json()
     msg = data.get("message") or {}
     content = (msg.get("content") or "").strip()
