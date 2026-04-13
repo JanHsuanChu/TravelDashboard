@@ -10,12 +10,12 @@ config:
   layout: dagre
 ---
 flowchart TB
-    Dashboard@{ label: "Travel Dashboard (input)<br>-Enter user preference<br>-Select location and info to display<br>-Q: 'Suggest restaurant based on my preference and public reviews" } -- API --> Database[("Database<br>-Supabase<br>-Saved user preference")]
-    Agent2["Agent 3 Analyst<br>Travel friendliness scoring"] --> SummaryReport["Travel Dashboard (display)<br>-Dining + Essential info (Agent 2)<br>-Friendliness (Agent 3)<br>-Map / selected place"]
+    Dashboard@{ label: "Travel Dashboard (input)<br>-Enter user preference<br>-Select location and info to display" } <-- API --> Database[("Database<br>-Supabase<br>-Saved user preference")]
+    Agent2["Travel friendliness scoring<br>LLM analysis"] --> SummaryReport["Travel Dashboard (display)<br>-Dining + Essential info<br>-Friendliness Score<br>-Map / selected place"]
     Agent1["Agent 1<br>RAG on user preference<br>and restaurant data"] --> n1["Agent 2<br>Plan LLM + recommendation engine<br>Dining + Essential info"]
     n2["Restaurant data"] -- API --> Agent1
     Dashboard -->|User preferences from UI| Agent1
-    n3["Location / macro data<br>(World Bank — Shiny today;<br>other feeds e.g. news — roadmap)"] -- API --> Agent2
+    n3["Location / macro data<br>(World Bank API today;<br>other feeds e.g. news — roadmap)"] -- API --> Agent2
     n1 --> SummaryReport
     Dashboard -- API --> n3
     Dashboard -- API --> n2
