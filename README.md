@@ -4,6 +4,34 @@
 
 Web app for planning trips, capturing food preferences, and generating structured travel recommendations in one UI. This README includes **app description**, **process diagrams**, and **technical documentation** for developers and stakeholders.
 
+## Table of contents
+
+- [Repository](#repository)
+- [App description and documentation](#app-description-and-documentation)
+  - [Description](#description)
+  - [Usage instructions (deployed app)](#usage-instructions-deployed-app)
+  - [Process diagram and architecture reference](#process-diagram-and-architecture-reference)
+    - [Target pipeline (multi-agent, review RAG)](#target-pipeline-multi-agent-review-rag)
+    - [Legend (target pipeline)](#legend-target-pipeline)
+    - [Current implementation (Shiny prototype — data flow)](#current-implementation-shiny-prototype--data-flow)
+  - [Technical documentation](#technical-documentation)
+    - [System architecture (roles and workflow)](#system-architecture-roles-and-workflow)
+    - [RAG and tool implementation](#rag-and-tool-implementation)
+    - [Travel advisory](#travel-advisory)
+    - [Technical details](#technical-details)
+    - [LLM model usage](#llm-model-usage)
+    - [Google Cloud: Places and Maps Embed setup](#google-cloud-places-and-maps-embed-setup)
+    - [Usage instructions (local development)](#usage-instructions-local-development)
+- [Stack](#stack)
+- [Supabase](#supabase)
+  - [Schema](#schema)
+    - [`app_user`](#app_user)
+    - [`preference`](#preference)
+    - [UI ↔ database mapping (Save)](#ui--database-mapping-save)
+  - [Apply migrations](#apply-migrations)
+- [Layout](#layout)
+- [Appendix: README maintenance](#appendix-readme-maintenance)
+
 <p align="center">
   <img src="docs/readme_palette.svg" alt="Brand palette: #AC85E9, #FF6C9D, #FFA3C8, #FDE164, #01E1F2" width="520" />
 </p>
@@ -48,6 +76,24 @@ git push -u origin main
 
 Without a Places API key, dining places are generic LLM suggestions and the map stays empty; dishes and friendliness still work.
 
+### Usage instructions (deployed app)
+
+**App link (Posit Connect Cloud):** `https://connect.systems-apps.com/TravelDashboard/`
+
+**Password:** None (Connect access control, if any, is handled by the platform).
+
+**How to use:**
+
+- **Enter destination**: choose **Country** (required) and optional **City/region**.
+- **Set timing**: choose **Season** or **Month** (one mode).
+- **Food preferences**: pick tags and optionally add free-text likes/dislikes/restrictions.
+- **Optional: Save food preferences**: fill **First name** + **Email** to save and enable preload on future visits.
+- **Generate recommendations**: updates **Dining — dishes**, **Dining — recommended places** (and map if Google is configured), **Essential info**, and **Travel friendliness**.
+
+**Preference UX (brief):** The app has **no accounts**. Your **email is an optional identity** used to **load your most recent saved food preferences** when you return. **Generate** still works without name/email; when both are valid, **Generate may auto-save a new preference snapshot** first. Full UX spec: [`docs/ui_flow_preferences.md`](docs/ui_flow_preferences.md).
+
+**Travel friendliness (brief):** Scores come from the **World Bank API** (normalized to **0–100** with fixed reference bounds). The card’s summary line is deterministic (no LLM). If `OLLAMA_API_KEY` is set, the downloadable HTML report may include optional model-written **Purpose** and **Recommendations**. Details: [`docs/travel_friendliness.md`](docs/travel_friendliness.md).
+
 **APIs in use:**
 
 | API / service | Purpose |
@@ -63,9 +109,10 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 
 | Capability | Status | Value |
 |------------|--------|--------|
-| **Preference storage** | Implemented | Food likes/dislikes/dietary tags and text; segment users via `food_tags` JSONB. |
-| **Generate recommendations** | Implemented | **Agent 2** Ollama call for plan JSON (parallel with advisory table fetch); optional **auxiliary** calls for advisory summary + friendliness report prose; optional Places-backed list for Agent 2. |
-| **Architecture context in the prompt** | Implemented | `docs/architecture.md` is injected into the system message. |
+| **Preference storage** | Implemented | Returning users don’t need to re-enter preferences: the app preloads the most recent saved food tags + text by email. |
+| **Plan generation (Agent 2)** | Implemented | One Ollama Cloud call generates a structured plan JSON for **Dining** + **Essential info**; optionally grounded by the Agent 1 restaurant candidate list. |
+| **Essential info — travel advisory** | Implemented | Live U.S. State Dept advisory table + cached snapshot + short auxiliary-model blurb (grounded in the matched row). |
+| **Travel friendliness scoring module** | Implemented | Deterministic World Bank–based scores + downloadable HTML report; optional auxiliary-model prose for the report. |
 | **Agent 1 — Places + embedding RAG** | Implemented (optional) | Live restaurant candidates, semantic ranking, preference-aware search queries; details include `priceLevel` and review snippets for the LLM. |
 | **Agent 2 — Dining copy** | Implemented | Structured dishes (`$`/`$$`/`$$$`) and places aligned to Agent 1 names when available. |
 | **Full multi-agent orchestration** | Partial / evolving | Two-stage dining pipeline today; broader tool calling and review corpora remain roadmap (see target diagram). |
@@ -78,7 +125,7 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 
 The content below is **generated** from [`docs/architecture.md`](docs/architecture.md). It includes the **target** pipeline (agents, RAG, tools) and a **current** Shiny data-flow diagram. Edit that file, then run `python3 scripts/build_readme.py` to refresh `README.md`. CI also regenerates `README.md` when `docs/architecture.md` or `README.template.md` changes.
 
-The **first** diagram is the **target** pipeline (multi-agent; **Agent 1** retrieval; **Agent 2** plan LLM for **Dining** and **Essential info**; **Agent 3** friendliness). The **second** diagram is the **current** Shiny app data flow (Supabase for persistence and form preload, optional Google Places + embedding RAG, Ollama, injected architecture context).
+The **first** diagram is the **target** pipeline (multi-agent; **Agent 1** retrieval; **Agent 2** plan LLM for **Dining** and **Essential info**; travel friendliness scoring module). The **second** diagram is the **current** Shiny app data flow (Supabase for persistence and form preload, optional Google Places + embedding RAG, Ollama, injected architecture context).
 
 #### Target pipeline (multi-agent, review RAG)
 
@@ -123,10 +170,10 @@ flowchart TB
 | **Travel Dashboard (input)** | User preferences, location selection, display choices, and questions—**fed into Agent 1** together with **restaurant data** for RAG. |
 | **Supabase** | **Saved user preferences** (Save / returning users); supports the dashboard and **Agent 1** preference signal alongside **restaurant data**. |
 | **Restaurant data** | External corpus/API for **Agent 1 RAG** (listings, details, public text). **Shiny:** **Google Places API (New)** Text Search + Place Details + local embedding rank (`restaurant_rag.py`). |
-| **Location / macro data** | **World Bank** API → Agent 3 Analyst in the **current** Shiny app (`travel_friendliness/wb_api.py`). Extra feeds (e.g. news, monitors) remain **roadmap** for the target diagram only. |
+| **Location / macro data** | **World Bank** API → travel friendliness scoring module in the **current** Shiny app (`travel_friendliness/wb_api.py`). Extra feeds (e.g. news, monitors) remain **roadmap** for the target diagram only. |
 | **Agent 1 → Agent 2** | Retrieval (**user preference** + **restaurant data**) **→ Agent 2**, the **plan LLM** and recommendation engine that produces **Dining** (e.g. dishes + places) and **Essential info** (e.g. advisory / weather in the structured plan). |
-| **Agent 3 Analyst** | Travel friendliness scoring and report path **→ dashboard display** (Shiny: `travel_friendliness/`—World Bank data, HTML report, optional LLM prose). |
-| **Travel Dashboard (display)** | **Dining** and **Essential info** from the **Agent 2** plan LLM; **friendliness** (and downloadable HTML report) from **Agent 3 Analyst**; map / place selection via **Google Places + Maps Embed** (same API key) in Shiny. |
+| **Travel friendliness scoring module** | Travel friendliness scoring and report path **→ dashboard display** (Shiny: `travel_friendliness/`—World Bank data, HTML report, optional LLM prose). |
+| **Travel Dashboard (display)** | **Dining** and **Essential info** from the **Agent 2** plan LLM; **friendliness** (and downloadable HTML report) from the travel friendliness scoring module; map / place selection via **Google Places + Maps Embed** (same API key) in Shiny. |
 
 #### Current implementation (Shiny prototype — data flow)
 
@@ -143,7 +190,7 @@ flowchart TB
 2. **Optional auto-save** — If first name + valid email are present, preferences are persisted before planning (same path as **Save**).
 3. **Preference narrative for Agent 1** — Built from **food and trip fields in the UI** at Generate time. If first name + email are present, the server may **append** text from the latest **Supabase** preference row (`preference_narrative_from_supabase_row`) after the trip narrative—still **plain text conditioning** for Places search / embeddings, not vector RAG over Supabase.
 4. **Agent 1** (optional, when `GOOGLE_PLACES_API_KEY` is set) — `shiny_app/restaurant_rag.py` + `shiny_app/google_places_client.py`: **Places API (New)** Text Search (including a food-hint query), **embedding similarity** ranking, Place Details (address, review snippets, **price level**, coordinates). Candidates carry `rag_match_score` and `price_tier` for the UI.
-5. **Agent 2** (plan LLM — **Dining** + **Essential info**) — One **Ollama Cloud** `POST …/api/chat` via `shiny_app/ollama_client.py`: `OLLAMA_MODEL`, `OLLAMA_HOST`, optional `OLLAMA_NUM_PREDICT`. System message = architecture context + JSON rules from `shiny_app/plan_logic.py`. If `TD_LIGHT_ARCH_CONTEXT` is set, a **short stub** is used instead of reading full `docs/architecture.md` via `shiny_app/context.py`. User message = `trip_and_food` + optional **`agent1_restaurants`**. Returned JSON includes **`dining`** and **`essential`** (advisory / weather); **`friendliness`** is **dropped** before storage—the UI uses **Agent 3** (World Bank) for that panel.
+5. **Agent 2** (plan LLM — **Dining** + **Essential info**) — One **Ollama Cloud** `POST …/api/chat` via `shiny_app/ollama_client.py`: `OLLAMA_MODEL`, `OLLAMA_HOST`, optional `OLLAMA_NUM_PREDICT`. System message = architecture context + JSON rules from `shiny_app/plan_logic.py`. If `TD_LIGHT_ARCH_CONTEXT` is set, a **short stub** is used instead of reading full `docs/architecture.md` via `shiny_app/context.py`. User message = `trip_and_food` + optional **`agent1_restaurants`**. Returned JSON includes **`dining`** and **`essential`** (advisory / weather); **`friendliness`** is **dropped** before storage—the UI uses the travel friendliness scoring module (World Bank) for that panel.
 6. **Maps Embed API** — Selected place from merged LLM rows + Agent 1 markers → iframe URL (`shiny_app/server.py`); same key as Places.
 
 ```mermaid
@@ -328,9 +375,9 @@ Use **one Google Cloud project** and **one API key** for both server-side Places
 - **SQL:** [`supabase/migrations/`](supabase/migrations/)
 - **Docs / prompt context:** [`docs/architecture.md`](docs/architecture.md)
 
-**Deployment:** The documented path is **local** (`shiny run app.py`). You can host on **Posit Connect**, **Shiny Server**, or a **container**; configure the same environment variables on the host. There is **no app-level password** in this prototype—use platform auth, VPN, or network rules if you expose it beyond localhost.
+**Deployment:** This app is deployed on **Posit Connect Cloud** at `https://connect.systems-apps.com/TravelDashboard/`. The documented path below is **local** (`shiny run app.py`). You can host on **Posit Connect**, **Shiny Server**, or a **container**; configure the same environment variables on the host. There is **no app-level password** in this prototype—use platform auth, VPN, or network rules if you expose it beyond localhost.
 
-#### Usage instructions
+#### Usage instructions (local development)
 
 1. **Environment:** Python 3.10+ recommended. From the repo root:
 
@@ -357,14 +404,6 @@ Or from repo root (after venv is ready): `./run_shiny.sh`
 **Password:** None for the default local app. If you deploy behind a platform that adds authentication, follow that platform’s login flow.
 
 ---
-
-## Development
-
-To regenerate the root `README.md` after editing [`README.template.md`](README.template.md) or [`docs/architecture.md`](docs/architecture.md):
-
-```bash
-python3 scripts/build_readme.py
-```
 
 ## Stack
 
@@ -427,6 +466,14 @@ Run in order:
 - **Option B: Supabase MCP**: `apply_migration` / `execute_sql` with the same SQL.
 
 ## Layout
+
+## Appendix: README maintenance
+
+The root `README.md` is generated from [`README.template.md`](README.template.md) and [`docs/architecture.md`](docs/architecture.md). After editing either, regenerate:
+
+```bash
+python3 scripts/build_readme.py
+```
 
 - **Shiny (Python):** [`shiny_app/`](shiny_app/) — `app.py`, `ui.py`, `server.py`, [`components/`](shiny_app/components/), [`www/custom.css`](shiny_app/www/custom.css)
 - **SQL:** [`supabase/migrations/`](supabase/migrations/)

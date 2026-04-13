@@ -6,7 +6,7 @@ from pathlib import Path
 
 from shiny import ui
 
-from components import (
+from shiny_app.components import (
     compare_with_rows_content,
     destination_fields_content,
     dining_dishes_output_ui,

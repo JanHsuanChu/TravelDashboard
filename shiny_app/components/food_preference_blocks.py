@@ -1,7 +1,7 @@
 from shiny import ui
 
-import tags as tagdata
-import validators as val
+import shiny_app.tags as tagdata
+import shiny_app.validators as val
 
 
 def food_preference_combined_content():

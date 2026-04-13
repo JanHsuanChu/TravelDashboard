@@ -24,35 +24,35 @@ for _env_path in (
 
 from shiny import reactive, render, ui
 
-import tags as tagdata
-from context import load_architecture_markdown
-from ollama_client import extract_json_object, ollama_chat, resolved_model_agent2
-from plan_logic import (
+import shiny_app.tags as tagdata
+from shiny_app.context import load_architecture_markdown
+from shiny_app.iso2_bridge import friendliness_country_query, is_known_iso2
+from shiny_app.ollama_client import extract_json_object, ollama_chat, resolved_model_agent2
+from shiny_app.plan_logic import (
     AGENT2_DINING_GROUNDING,
     SYSTEM_JSON_INSTRUCTION,
     build_trip_context,
     user_prompt_from_context,
 )
-from restaurant_rag import (
+from shiny_app.restaurant_rag import (
     preference_narrative_from_supabase_row,
     preference_narrative_from_trip_food,
     run_agent1_places_rag,
 )
-from supabase_client import (
+from shiny_app.supabase_client import (
     fetch_user_and_latest_preference,
     get_or_create_user,
     insert_preference,
     normalize_email,
 )
-from iso2_bridge import friendliness_country_query, is_known_iso2
-from travel_friendliness.pipeline import FriendlinessResult, compute_friendliness
-from us_travel_advisory import (
+from shiny_app.travel_friendliness.pipeline import FriendlinessResult, compute_friendliness
+from shiny_app.us_travel_advisory import (
     build_travel_advisory_markdown,
     get_advisory_snapshot,
     match_advisory_row,
     summarize_advisory_with_ollama,
 )
-from validators import validate_food_text, validate_when_mode, valid_email_shape
+from shiny_app.validators import validate_food_text, validate_when_mode, valid_email_shape
 
 logger = logging.getLogger(__name__)
 

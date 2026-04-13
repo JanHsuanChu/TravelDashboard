@@ -13,8 +13,8 @@ from typing import Any
 
 import numpy as np
 
-import google_places_client as places
-import tags as tagdata
+import shiny_app.google_places_client as places
+import shiny_app.tags as tagdata
 
 _EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 _embed_model = None

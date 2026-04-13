@@ -544,7 +544,7 @@ def _advisory_num_predict() -> int:
 
 def summarize_advisory_with_ollama(row: AdvisoryRow, *, num_predict: int | None = None) -> str:
     """1–2 plain sentences using the auxiliary Ollama model (resolved_model_other / ollama_chat default)."""
-    from ollama_client import ollama_chat
+    from shiny_app.ollama_client import ollama_chat
 
     facts = {
         "country": row.country,
