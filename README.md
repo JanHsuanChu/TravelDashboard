@@ -82,7 +82,7 @@ The **first** diagram is the **target** pipeline (multi-agent; **Agent 1** retri
 
 #### Target pipeline (multi-agent, review RAG)
 
-This is the roadmap: specialized agents; **Agent 1** runs **RAG on user preference and restaurant data** (preferences from the **Travel Dashboard**—including values persisted in **Supabase** and shown in the UI—plus external **restaurant data**); **Agent 2** is the **plan LLM** and recommendation engine for **Dining** and **Essential info**; **Agent 3** covers travel friendliness and the report path to the dashboard.
+This is the roadmap: specialized agents; **Agent 1** runs **RAG on user preference and restaurant data** (preferences from the **Travel Dashboard**—including values persisted in **Supabase** and shown in the UI—plus external **restaurant data**); **Agent 2** is the **plan LLM** and recommendation engine for **Dining** and **Essential info**; a seperate LLM-powered workflow covers travel friendliness and the report path to the dashboard.
 
 ```mermaid
 ---
