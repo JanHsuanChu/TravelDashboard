@@ -13,3 +13,6 @@ shiny_app/.venv/
 # OS / editor
 .DS_Store
 *.log
+
+# rsconnect-python (Posit Connect deploy metadata)
+rsconnect-python/
