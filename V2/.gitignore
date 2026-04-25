@@ -1,0 +1,18 @@
+# Local env (Shiny)
+shiny_app/.env
+.env
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+shiny_app/.venv/
+
+# OS / editor
+.DS_Store
+*.log
+
+# rsconnect-python (Posit Connect deploy metadata)
+rsconnect-python/

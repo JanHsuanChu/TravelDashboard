@@ -1,0 +1,2571 @@
+{
+  "source": "https://restcountries.com/v3.1/all",
+  "countries": [
+    {
+      "cca2": "AF",
+      "name": "Afghanistan",
+      "aliases": [
+        "Afghanistan",
+        "AF",
+        "Afġānistān",
+        "Islamic Republic of Afghanistan"
+      ]
+    },
+    {
+      "cca2": "AL",
+      "name": "Albania",
+      "aliases": [
+        "Albania",
+        "AL",
+        "Shqipëri",
+        "Shqipëria",
+        "Shqipnia",
+        "Republic of Albania"
+      ]
+    },
+    {
+      "cca2": "DZ",
+      "name": "Algeria",
+      "aliases": [
+        "Algeria",
+        "DZ",
+        "Dzayer",
+        "Algérie",
+        "People's Democratic Republic of Algeria"
+      ]
+    },
+    {
+      "cca2": "AS",
+      "name": "American Samoa",
+      "aliases": [
+        "American Samoa",
+        "AS",
+        "Amerika Sāmoa",
+        "Amelika Sāmoa",
+        "Sāmoa Amelika"
+      ]
+    },
+    {
+      "cca2": "AD",
+      "name": "Andorra",
+      "aliases": [
+        "Andorra",
+        "AD",
+        "Principality of Andorra",
+        "Principat d'Andorra"
+      ]
+    },
+    {
+      "cca2": "AO",
+      "name": "Angola",
+      "aliases": [
+        "Angola",
+        "AO",
+        "República de Angola",
+        "ʁɛpublika de an'ɡɔla",
+        "Republic of Angola"
+      ]
+    },
+    {
+      "cca2": "AI",
+      "name": "Anguilla",
+      "aliases": [
+        "Anguilla",
+        "AI"
+      ]
+    },
+    {
+      "cca2": "AQ",
+      "name": "Antarctica",
+      "aliases": [
+        "Antarctica",
+        "AQ"
+      ]
+    },
+    {
+      "cca2": "AG",
+      "name": "Antigua and Barbuda",
+      "aliases": [
+        "Antigua and Barbuda",
+        "AG"
+      ]
+    },
+    {
+      "cca2": "AR",
+      "name": "Argentina",
+      "aliases": [
+        "Argentina",
+        "AR",
+        "Argentine Republic",
+        "República Argentina"
+      ]
+    },
+    {
+      "cca2": "AM",
+      "name": "Armenia",
+      "aliases": [
+        "Armenia",
+        "AM",
+        "Hayastan",
+        "Republic of Armenia",
+        "Հայաստանի Հանրապետություն"
+      ]
+    },
+    {
+      "cca2": "AW",
+      "name": "Aruba",
+      "aliases": [
+        "Aruba",
+        "AW"
+      ]
+    },
+    {
+      "cca2": "AU",
+      "name": "Australia",
+      "aliases": [
+        "Australia",
+        "AU",
+        "Commonwealth of Australia"
+      ]
+    },
+    {
+      "cca2": "AT",
+      "name": "Austria",
+      "aliases": [
+        "Austria",
+        "AT",
+        "Osterreich",
+        "Oesterreich",
+        "Republic of Austria"
+      ]
+    },
+    {
+      "cca2": "AZ",
+      "name": "Azerbaijan",
+      "aliases": [
+        "Azerbaijan",
+        "AZ",
+        "Republic of Azerbaijan",
+        "Azərbaycan Respublikası"
+      ]
+    },
+    {
+      "cca2": "BS",
+      "name": "Bahamas",
+      "aliases": [
+        "Bahamas",
+        "BS",
+        "Commonwealth of the Bahamas"
+      ]
+    },
+    {
+      "cca2": "BH",
+      "name": "Bahrain",
+      "aliases": [
+        "Bahrain",
+        "BH",
+        "Kingdom of Bahrain",
+        "Mamlakat al-Baḥrayn"
+      ]
+    },
+    {
+      "cca2": "BD",
+      "name": "Bangladesh",
+      "aliases": [
+        "Bangladesh",
+        "BD",
+        "People's Republic of Bangladesh",
+        "Gônôprôjatôntri Bangladesh"
+      ]
+    },
+    {
+      "cca2": "BB",
+      "name": "Barbados",
+      "aliases": [
+        "Barbados",
+        "BB"
+      ]
+    },
+    {
+      "cca2": "BY",
+      "name": "Belarus",
+      "aliases": [
+        "Belarus",
+        "BY",
+        "Bielaruś",
+        "Republic of Belarus",
+        "Белоруссия",
+        "Республика Белоруссия"
+      ]
+    },
+    {
+      "cca2": "BE",
+      "name": "Belgium",
+      "aliases": [
+        "Belgium",
+        "BE",
+        "België",
+        "Belgie",
+        "Belgien",
+        "Belgique",
+        "Kingdom of Belgium",
+        "Koninkrijk België",
+        "Royaume de Belgique",
+        "Königreich Belgien"
+      ]
+    },
+    {
+      "cca2": "BZ",
+      "name": "Belize",
+      "aliases": [
+        "Belize",
+        "BZ"
+      ]
+    },
+    {
+      "cca2": "BJ",
+      "name": "Benin",
+      "aliases": [
+        "Benin",
+        "BJ",
+        "Republic of Benin",
+        "République du Bénin"
+      ]
+    },
+    {
+      "cca2": "BM",
+      "name": "Bermuda",
+      "aliases": [
+        "Bermuda",
+        "BM",
+        "The Islands of Bermuda",
+        "The Bermudas",
+        "Somers Isles"
+      ]
+    },
+    {
+      "cca2": "BT",
+      "name": "Bhutan",
+      "aliases": [
+        "Bhutan",
+        "BT",
+        "Kingdom of Bhutan"
+      ]
+    },
+    {
+      "cca2": "BO",
+      "name": "Bolivia",
+      "aliases": [
+        "Bolivia",
+        "BO",
+        "Buliwya",
+        "Wuliwya",
+        "Bolivia, Plurinational State of",
+        "Plurinational State of Bolivia",
+        "Estado Plurinacional de Bolivia",
+        "Buliwya Mamallaqta",
+        "Wuliwya Suyu",
+        "Tetã Volívia"
+      ]
+    },
+    {
+      "cca2": "BA",
+      "name": "Bosnia and Herzegovina",
+      "aliases": [
+        "Bosnia and Herzegovina",
+        "BA",
+        "Bosnia-Herzegovina",
+        "Босна и Херцеговина"
+      ]
+    },
+    {
+      "cca2": "BW",
+      "name": "Botswana",
+      "aliases": [
+        "Botswana",
+        "BW",
+        "Republic of Botswana",
+        "Lefatshe la Botswana"
+      ]
+    },
+    {
+      "cca2": "BV",
+      "name": "Bouvet Island",
+      "aliases": [
+        "Bouvet Island",
+        "BV",
+        "Bouvetøya",
+        "Bouvet-øya"
+      ]
+    },
+    {
+      "cca2": "BR",
+      "name": "Brazil",
+      "aliases": [
+        "Brazil",
+        "BR",
+        "Brasil",
+        "Federative Republic of Brazil",
+        "República Federativa do Brasil"
+      ]
+    },
+    {
+      "cca2": "IO",
+      "name": "British Indian Ocean Territory",
+      "aliases": [
+        "British Indian Ocean Territory",
+        "IO"
+      ]
+    },
+    {
+      "cca2": "VG",
+      "name": "British Virgin Islands",
+      "aliases": [
+        "British Virgin Islands",
+        "VG",
+        "Virgin Islands, British",
+        "Virgin Islands"
+      ]
+    },
+    {
+      "cca2": "BN",
+      "name": "Brunei",
+      "aliases": [
+        "Brunei",
+        "BN",
+        "Brunei Darussalam",
+        "Nation of Brunei",
+        "the Abode of Peace",
+        "Nation of Brunei, Abode of Peace"
+      ]
+    },
+    {
+      "cca2": "BG",
+      "name": "Bulgaria",
+      "aliases": [
+        "Bulgaria",
+        "BG",
+        "Republic of Bulgaria",
+        "Република България"
+      ]
+    },
+    {
+      "cca2": "BF",
+      "name": "Burkina Faso",
+      "aliases": [
+        "Burkina Faso",
+        "BF"
+      ]
+    },
+    {
+      "cca2": "BI",
+      "name": "Burundi",
+      "aliases": [
+        "Burundi",
+        "BI",
+        "Republic of Burundi",
+        "Republika y'Uburundi",
+        "République du Burundi"
+      ]
+    },
+    {
+      "cca2": "KH",
+      "name": "Cambodia",
+      "aliases": [
+        "Cambodia",
+        "KH",
+        "Kingdom of Cambodia"
+      ]
+    },
+    {
+      "cca2": "CM",
+      "name": "Cameroon",
+      "aliases": [
+        "Cameroon",
+        "CM",
+        "Republic of Cameroon",
+        "République du Cameroun"
+      ]
+    },
+    {
+      "cca2": "CA",
+      "name": "Canada",
+      "aliases": [
+        "Canada",
+        "CA"
+      ]
+    },
+    {
+      "cca2": "CV",
+      "name": "Cape Verde",
+      "aliases": [
+        "Cape Verde",
+        "CV",
+        "Republic of Cabo Verde",
+        "República de Cabo Verde"
+      ]
+    },
+    {
+      "cca2": "BQ",
+      "name": "Caribbean Netherlands",
+      "aliases": [
+        "Caribbean Netherlands",
+        "BES islands",
+        "Bonaire, Sint Eustatius and Saba"
+      ]
+    },
+    {
+      "cca2": "KY",
+      "name": "Cayman Islands",
+      "aliases": [
+        "Cayman Islands",
+        "KY"
+      ]
+    },
+    {
+      "cca2": "CF",
+      "name": "Central African Republic",
+      "aliases": [
+        "CF",
+        "Central African Republic",
+        "République centrafricaine"
+      ]
+    },
+    {
+      "cca2": "TD",
+      "name": "Chad",
+      "aliases": [
+        "Chad",
+        "TD",
+        "Tchad",
+        "Republic of Chad",
+        "République du Tchad"
+      ]
+    },
+    {
+      "cca2": "CL",
+      "name": "Chile",
+      "aliases": [
+        "Chile",
+        "CL",
+        "Republic of Chile",
+        "República de Chile"
+      ]
+    },
+    {
+      "cca2": "CN",
+      "name": "China",
+      "aliases": [
+        "China",
+        "CN",
+        "Zhōngguó",
+        "Zhongguo",
+        "Zhonghua",
+        "People's Republic of China",
+        "中华人民共和国",
+        "Zhōnghuá Rénmín Gònghéguó"
+      ]
+    },
+    {
+      "cca2": "CX",
+      "name": "Christmas Island",
+      "aliases": [
+        "Christmas Island",
+        "CX",
+        "Territory of Christmas Island"
+      ]
+    },
+    {
+      "cca2": "CC",
+      "name": "Cocos (Keeling) Islands",
+      "aliases": [
+        "Cocos (Keeling) Islands",
+        "CC",
+        "Keeling Islands",
+        "Cocos Islands",
+        "Territory of the Cocos (Keeling) Islands"
+      ]
+    },
+    {
+      "cca2": "CO",
+      "name": "Colombia",
+      "aliases": [
+        "Colombia",
+        "CO",
+        "Republic of Colombia",
+        "República de Colombia"
+      ]
+    },
+    {
+      "cca2": "KM",
+      "name": "Comoros",
+      "aliases": [
+        "Comoros",
+        "KM",
+        "Union of the Comoros",
+        "Union des Comores",
+        "Udzima wa Komori",
+        "al-Ittiḥād al-Qumurī"
+      ]
+    },
+    {
+      "cca2": "CK",
+      "name": "Cook Islands",
+      "aliases": [
+        "Cook Islands",
+        "CK",
+        "Kūki 'Āirani"
+      ]
+    },
+    {
+      "cca2": "CR",
+      "name": "Costa Rica",
+      "aliases": [
+        "Costa Rica",
+        "CR",
+        "Republic of Costa Rica",
+        "República de Costa Rica"
+      ]
+    },
+    {
+      "cca2": "HR",
+      "name": "Croatia",
+      "aliases": [
+        "Croatia",
+        "HR",
+        "Hrvatska",
+        "Republic of Croatia",
+        "Republika Hrvatska"
+      ]
+    },
+    {
+      "cca2": "CU",
+      "name": "Cuba",
+      "aliases": [
+        "Cuba",
+        "CU",
+        "Republic of Cuba",
+        "República de Cuba"
+      ]
+    },
+    {
+      "cca2": "CW",
+      "name": "Curaçao",
+      "aliases": [
+        "Curaçao",
+        "CW",
+        "Curacao",
+        "Kòrsou",
+        "Country of Curaçao",
+        "Land Curaçao",
+        "Pais Kòrsou"
+      ]
+    },
+    {
+      "cca2": "CY",
+      "name": "Cyprus",
+      "aliases": [
+        "Cyprus",
+        "CY",
+        "Kýpros",
+        "Kıbrıs",
+        "Republic of Cyprus",
+        "Κυπριακή Δημοκρατία",
+        "Kıbrıs Cumhuriyeti"
+      ]
+    },
+    {
+      "cca2": "CZ",
+      "name": "Czechia",
+      "aliases": [
+        "Czechia",
+        "CZ",
+        "Česká republika",
+        "Česko",
+        "Czech Republic"
+      ]
+    },
+    {
+      "cca2": "CD",
+      "name": "DR Congo",
+      "aliases": [
+        "CD",
+        "DR Congo",
+        "Congo-Kinshasa",
+        "Congo, the Democratic Republic of the",
+        "DRC",
+        "Democratic Republic of the Congo"
+      ]
+    },
+    {
+      "cca2": "DK",
+      "name": "Denmark",
+      "aliases": [
+        "Denmark",
+        "DK",
+        "Danmark",
+        "Kingdom of Denmark",
+        "Kongeriget Danmark"
+      ]
+    },
+    {
+      "cca2": "DJ",
+      "name": "Djibouti",
+      "aliases": [
+        "Djibouti",
+        "DJ",
+        "Jabuuti",
+        "Gabuuti",
+        "Republic of Djibouti",
+        "République de Djibouti",
+        "Gabuutih Ummuuno",
+        "Jamhuuriyadda Jabuuti"
+      ]
+    },
+    {
+      "cca2": "DM",
+      "name": "Dominica",
+      "aliases": [
+        "Dominica",
+        "DM",
+        "Dominique",
+        "Wai‘tu kubuli",
+        "Commonwealth of Dominica"
+      ]
+    },
+    {
+      "cca2": "DO",
+      "name": "Dominican Republic",
+      "aliases": [
+        "Dominican Republic",
+        "DO"
+      ]
+    },
+    {
+      "cca2": "EC",
+      "name": "Ecuador",
+      "aliases": [
+        "Ecuador",
+        "EC",
+        "Republic of Ecuador",
+        "República del Ecuador"
+      ]
+    },
+    {
+      "cca2": "EG",
+      "name": "Egypt",
+      "aliases": [
+        "Egypt",
+        "EG",
+        "Arab Republic of Egypt"
+      ]
+    },
+    {
+      "cca2": "SV",
+      "name": "El Salvador",
+      "aliases": [
+        "El Salvador",
+        "SV",
+        "Republic of El Salvador",
+        "República de El Salvador"
+      ]
+    },
+    {
+      "cca2": "GQ",
+      "name": "Equatorial Guinea",
+      "aliases": [
+        "Equatorial Guinea",
+        "GQ",
+        "Republic of Equatorial Guinea",
+        "República de Guinea Ecuatorial",
+        "République de Guinée équatoriale",
+        "República da Guiné Equatorial"
+      ]
+    },
+    {
+      "cca2": "ER",
+      "name": "Eritrea",
+      "aliases": [
+        "Eritrea",
+        "ER",
+        "State of Eritrea",
+        "ሃገረ ኤርትራ",
+        "Dawlat Iritriyá",
+        "ʾErtrā",
+        "Iritriyā"
+      ]
+    },
+    {
+      "cca2": "EE",
+      "name": "Estonia",
+      "aliases": [
+        "Estonia",
+        "EE",
+        "Eesti",
+        "Republic of Estonia",
+        "Eesti Vabariik"
+      ]
+    },
+    {
+      "cca2": "SZ",
+      "name": "Eswatini",
+      "aliases": [
+        "Eswatini",
+        "SZ",
+        "Swaziland",
+        "weSwatini",
+        "Swatini",
+        "Ngwane",
+        "Kingdom of Eswatini",
+        "Umbuso weSwatini"
+      ]
+    },
+    {
+      "cca2": "ET",
+      "name": "Ethiopia",
+      "aliases": [
+        "Ethiopia",
+        "ET",
+        "ʾĪtyōṗṗyā",
+        "Federal Democratic Republic of Ethiopia",
+        "የኢትዮጵያ ፌዴራላዊ ዲሞክራሲያዊ ሪፐብሊክ"
+      ]
+    },
+    {
+      "cca2": "FK",
+      "name": "Falkland Islands",
+      "aliases": [
+        "Falkland Islands",
+        "FK",
+        "Islas Malvinas",
+        "Falkland Islands (Malvinas)"
+      ]
+    },
+    {
+      "cca2": "FO",
+      "name": "Faroe Islands",
+      "aliases": [
+        "Faroe Islands",
+        "FO",
+        "Føroyar",
+        "Færøerne"
+      ]
+    },
+    {
+      "cca2": "FJ",
+      "name": "Fiji",
+      "aliases": [
+        "Fiji",
+        "FJ",
+        "Viti",
+        "Republic of Fiji",
+        "Matanitu ko Viti",
+        "Fijī Gaṇarājya"
+      ]
+    },
+    {
+      "cca2": "FI",
+      "name": "Finland",
+      "aliases": [
+        "Finland",
+        "FI",
+        "Suomi",
+        "Republic of Finland",
+        "Suomen tasavalta",
+        "Republiken Finland"
+      ]
+    },
+    {
+      "cca2": "FR",
+      "name": "France",
+      "aliases": [
+        "France",
+        "FR",
+        "French Republic",
+        "République française"
+      ]
+    },
+    {
+      "cca2": "GF",
+      "name": "French Guiana",
+      "aliases": [
+        "French Guiana",
+        "GF",
+        "Guiana",
+        "Guyane"
+      ]
+    },
+    {
+      "cca2": "PF",
+      "name": "French Polynesia",
+      "aliases": [
+        "PF",
+        "Polynésie française",
+        "French Polynesia",
+        "Pōrīnetia Farāni"
+      ]
+    },
+    {
+      "cca2": "TF",
+      "name": "French Southern and Antarctic Lands",
+      "aliases": [
+        "French Southern and Antarctic Lands",
+        "TF",
+        "French Southern Territories",
+        "Territory of the French Southern and Antarctic Lands"
+      ]
+    },
+    {
+      "cca2": "GA",
+      "name": "Gabon",
+      "aliases": [
+        "Gabon",
+        "GA",
+        "Gabonese Republic",
+        "République Gabonaise"
+      ]
+    },
+    {
+      "cca2": "GM",
+      "name": "Gambia",
+      "aliases": [
+        "Gambia",
+        "GM",
+        "Republic of the Gambia"
+      ]
+    },
+    {
+      "cca2": "GE",
+      "name": "Georgia",
+      "aliases": [
+        "Georgia",
+        "GE",
+        "Sakartvelo"
+      ]
+    },
+    {
+      "cca2": "DE",
+      "name": "Germany",
+      "aliases": [
+        "Germany",
+        "DE",
+        "Federal Republic of Germany",
+        "Bundesrepublik Deutschland"
+      ]
+    },
+    {
+      "cca2": "GH",
+      "name": "Ghana",
+      "aliases": [
+        "Ghana",
+        "GH",
+        "Republic of Ghana"
+      ]
+    },
+    {
+      "cca2": "GI",
+      "name": "Gibraltar",
+      "aliases": [
+        "Gibraltar",
+        "GI"
+      ]
+    },
+    {
+      "cca2": "GR",
+      "name": "Greece",
+      "aliases": [
+        "Greece",
+        "GR",
+        "Elláda",
+        "Hellenic Republic",
+        "Ελληνική Δημοκρατία"
+      ]
+    },
+    {
+      "cca2": "GL",
+      "name": "Greenland",
+      "aliases": [
+        "Greenland",
+        "GL",
+        "Grønland"
+      ]
+    },
+    {
+      "cca2": "GD",
+      "name": "Grenada",
+      "aliases": [
+        "Grenada",
+        "GD"
+      ]
+    },
+    {
+      "cca2": "GP",
+      "name": "Guadeloupe",
+      "aliases": [
+        "Guadeloupe",
+        "GP",
+        "Gwadloup"
+      ]
+    },
+    {
+      "cca2": "GU",
+      "name": "Guam",
+      "aliases": [
+        "Guam",
+        "GU",
+        "Guåhån"
+      ]
+    },
+    {
+      "cca2": "GT",
+      "name": "Guatemala",
+      "aliases": [
+        "Guatemala",
+        "GT",
+        "Republic of Guatemala"
+      ]
+    },
+    {
+      "cca2": "GG",
+      "name": "Guernsey",
+      "aliases": [
+        "Guernsey",
+        "GG",
+        "Bailiwick of Guernsey",
+        "Bailliage de Guernesey"
+      ]
+    },
+    {
+      "cca2": "GN",
+      "name": "Guinea",
+      "aliases": [
+        "Guinea",
+        "GN",
+        "Republic of Guinea",
+        "République de Guinée"
+      ]
+    },
+    {
+      "cca2": "GW",
+      "name": "Guinea-Bissau",
+      "aliases": [
+        "Guinea-Bissau",
+        "GW",
+        "Republic of Guinea-Bissau",
+        "República da Guiné-Bissau"
+      ]
+    },
+    {
+      "cca2": "GY",
+      "name": "Guyana",
+      "aliases": [
+        "Guyana",
+        "GY",
+        "Co-operative Republic of Guyana"
+      ]
+    },
+    {
+      "cca2": "HT",
+      "name": "Haiti",
+      "aliases": [
+        "Haiti",
+        "HT",
+        "Republic of Haiti",
+        "République d'Haïti",
+        "Repiblik Ayiti"
+      ]
+    },
+    {
+      "cca2": "HM",
+      "name": "Heard Island and McDonald Islands",
+      "aliases": [
+        "HM",
+        "Heard Island and McDonald Islands"
+      ]
+    },
+    {
+      "cca2": "HN",
+      "name": "Honduras",
+      "aliases": [
+        "Honduras",
+        "HN",
+        "Republic of Honduras",
+        "República de Honduras"
+      ]
+    },
+    {
+      "cca2": "HK",
+      "name": "Hong Kong",
+      "aliases": [
+        "Hong Kong",
+        "HK",
+        "Hong Kong Special Administrative Region of the People's Republic of China"
+      ]
+    },
+    {
+      "cca2": "HU",
+      "name": "Hungary",
+      "aliases": [
+        "Hungary",
+        "HU"
+      ]
+    },
+    {
+      "cca2": "IS",
+      "name": "Iceland",
+      "aliases": [
+        "Iceland",
+        "IS",
+        "Island",
+        "Republic of Iceland",
+        "Lýðveldið Ísland"
+      ]
+    },
+    {
+      "cca2": "IN",
+      "name": "India",
+      "aliases": [
+        "India",
+        "IN",
+        "Bhārat",
+        "Republic of India",
+        "Bharat Ganrajya",
+        "இந்தியா"
+      ]
+    },
+    {
+      "cca2": "ID",
+      "name": "Indonesia",
+      "aliases": [
+        "Indonesia",
+        "ID",
+        "Republic of Indonesia",
+        "Republik Indonesia"
+      ]
+    },
+    {
+      "cca2": "IR",
+      "name": "Iran",
+      "aliases": [
+        "Iran",
+        "IR",
+        "Islamic Republic of Iran",
+        "Iran, Islamic Republic of",
+        "Jomhuri-ye Eslāmi-ye Irān"
+      ]
+    },
+    {
+      "cca2": "IQ",
+      "name": "Iraq",
+      "aliases": [
+        "Iraq",
+        "IQ",
+        "Republic of Iraq",
+        "Jumhūriyyat al-‘Irāq"
+      ]
+    },
+    {
+      "cca2": "IE",
+      "name": "Ireland",
+      "aliases": [
+        "Ireland",
+        "IE",
+        "Éire",
+        "Republic of Ireland",
+        "Poblacht na hÉireann"
+      ]
+    },
+    {
+      "cca2": "IM",
+      "name": "Isle of Man",
+      "aliases": [
+        "Isle of Man",
+        "IM",
+        "Ellan Vannin",
+        "Mann",
+        "Mannin"
+      ]
+    },
+    {
+      "cca2": "IL",
+      "name": "Israel",
+      "aliases": [
+        "Israel",
+        "IL",
+        "State of Israel",
+        "Medīnat Yisrā'el"
+      ]
+    },
+    {
+      "cca2": "IT",
+      "name": "Italy",
+      "aliases": [
+        "Italy",
+        "IT",
+        "Italian Republic",
+        "Repubblica italiana"
+      ]
+    },
+    {
+      "cca2": "CI",
+      "name": "Ivory Coast",
+      "aliases": [
+        "CI",
+        "Côte d'Ivoire",
+        "Ivory Coast",
+        "Republic of Côte d'Ivoire",
+        "République de Côte d'Ivoire"
+      ]
+    },
+    {
+      "cca2": "JM",
+      "name": "Jamaica",
+      "aliases": [
+        "Jamaica",
+        "JM"
+      ]
+    },
+    {
+      "cca2": "JP",
+      "name": "Japan",
+      "aliases": [
+        "Japan",
+        "JP",
+        "Nippon",
+        "Nihon"
+      ]
+    },
+    {
+      "cca2": "JE",
+      "name": "Jersey",
+      "aliases": [
+        "Jersey",
+        "JE",
+        "Bailiwick of Jersey",
+        "Bailliage de Jersey",
+        "Bailliage dé Jèrri"
+      ]
+    },
+    {
+      "cca2": "JO",
+      "name": "Jordan",
+      "aliases": [
+        "Jordan",
+        "JO",
+        "Hashemite Kingdom of Jordan",
+        "al-Mamlakah al-Urdunīyah al-Hāshimīyah"
+      ]
+    },
+    {
+      "cca2": "KZ",
+      "name": "Kazakhstan",
+      "aliases": [
+        "Kazakhstan",
+        "KZ",
+        "Qazaqstan",
+        "Казахстан",
+        "Republic of Kazakhstan",
+        "Қазақстан Республикасы",
+        "Qazaqstan Respublïkası",
+        "Республика Казахстан",
+        "Respublika Kazakhstan"
+      ]
+    },
+    {
+      "cca2": "KE",
+      "name": "Kenya",
+      "aliases": [
+        "Kenya",
+        "KE",
+        "Republic of Kenya",
+        "Jamhuri ya Kenya"
+      ]
+    },
+    {
+      "cca2": "KI",
+      "name": "Kiribati",
+      "aliases": [
+        "Kiribati",
+        "KI",
+        "Republic of Kiribati",
+        "Ribaberiki Kiribati",
+        "Independent and Sovereign Republic of Kiribati"
+      ]
+    },
+    {
+      "cca2": "XK",
+      "name": "Kosovo",
+      "aliases": [
+        "Kosovo",
+        "XK",
+        "Република Косово",
+        "Republic of Kosovo"
+      ]
+    },
+    {
+      "cca2": "KW",
+      "name": "Kuwait",
+      "aliases": [
+        "Kuwait",
+        "KW",
+        "State of Kuwait",
+        "Dawlat al-Kuwait"
+      ]
+    },
+    {
+      "cca2": "KG",
+      "name": "Kyrgyzstan",
+      "aliases": [
+        "Kyrgyzstan",
+        "KG",
+        "Киргизия",
+        "Kyrgyz Republic",
+        "Кыргыз Республикасы",
+        "Kyrgyz Respublikasy"
+      ]
+    },
+    {
+      "cca2": "LA",
+      "name": "Laos",
+      "aliases": [
+        "Laos",
+        "LA",
+        "Lao",
+        "Lao People's Democratic Republic",
+        "Sathalanalat Paxathipatai Paxaxon Lao"
+      ]
+    },
+    {
+      "cca2": "LV",
+      "name": "Latvia",
+      "aliases": [
+        "Latvia",
+        "LV",
+        "Republic of Latvia",
+        "Latvijas Republika"
+      ]
+    },
+    {
+      "cca2": "LB",
+      "name": "Lebanon",
+      "aliases": [
+        "Lebanon",
+        "LB",
+        "Lebanese Republic",
+        "Al-Jumhūrīyah Al-Libnānīyah"
+      ]
+    },
+    {
+      "cca2": "LS",
+      "name": "Lesotho",
+      "aliases": [
+        "Lesotho",
+        "LS",
+        "Kingdom of Lesotho",
+        "Muso oa Lesotho"
+      ]
+    },
+    {
+      "cca2": "LR",
+      "name": "Liberia",
+      "aliases": [
+        "Liberia",
+        "LR",
+        "Republic of Liberia"
+      ]
+    },
+    {
+      "cca2": "LY",
+      "name": "Libya",
+      "aliases": [
+        "Libya",
+        "LY",
+        "State of Libya",
+        "Dawlat Libya"
+      ]
+    },
+    {
+      "cca2": "LI",
+      "name": "Liechtenstein",
+      "aliases": [
+        "Liechtenstein",
+        "LI",
+        "Principality of Liechtenstein",
+        "Fürstentum Liechtenstein"
+      ]
+    },
+    {
+      "cca2": "LT",
+      "name": "Lithuania",
+      "aliases": [
+        "Lithuania",
+        "LT",
+        "Republic of Lithuania",
+        "Lietuvos Respublika"
+      ]
+    },
+    {
+      "cca2": "LU",
+      "name": "Luxembourg",
+      "aliases": [
+        "Luxembourg",
+        "LU",
+        "Grand Duchy of Luxembourg",
+        "Grand-Duché de Luxembourg",
+        "Großherzogtum Luxemburg",
+        "Groussherzogtum Lëtzebuerg"
+      ]
+    },
+    {
+      "cca2": "MO",
+      "name": "Macau",
+      "aliases": [
+        "Macau",
+        "MO",
+        "澳门",
+        "Macao",
+        "Macao Special Administrative Region of the People's Republic of China",
+        "中華人民共和國澳門特別行政區",
+        "Região Administrativa Especial de Macau da República Popular da China"
+      ]
+    },
+    {
+      "cca2": "MG",
+      "name": "Madagascar",
+      "aliases": [
+        "Madagascar",
+        "MG",
+        "Republic of Madagascar",
+        "Repoblikan'i Madagasikara",
+        "République de Madagascar"
+      ]
+    },
+    {
+      "cca2": "MW",
+      "name": "Malawi",
+      "aliases": [
+        "Malawi",
+        "MW",
+        "Republic of Malawi"
+      ]
+    },
+    {
+      "cca2": "MY",
+      "name": "Malaysia",
+      "aliases": [
+        "Malaysia",
+        "MY"
+      ]
+    },
+    {
+      "cca2": "MV",
+      "name": "Maldives",
+      "aliases": [
+        "Maldives",
+        "MV",
+        "Maldive Islands",
+        "Republic of the Maldives",
+        "Dhivehi Raajjeyge Jumhooriyya"
+      ]
+    },
+    {
+      "cca2": "ML",
+      "name": "Mali",
+      "aliases": [
+        "Mali",
+        "ML",
+        "Republic of Mali",
+        "République du Mali"
+      ]
+    },
+    {
+      "cca2": "MT",
+      "name": "Malta",
+      "aliases": [
+        "Malta",
+        "MT",
+        "Republic of Malta",
+        "Repubblika ta' Malta"
+      ]
+    },
+    {
+      "cca2": "MH",
+      "name": "Marshall Islands",
+      "aliases": [
+        "Marshall Islands",
+        "MH",
+        "Republic of the Marshall Islands",
+        "Aolepān Aorōkin M̧ajeļ"
+      ]
+    },
+    {
+      "cca2": "MQ",
+      "name": "Martinique",
+      "aliases": [
+        "Martinique",
+        "MQ"
+      ]
+    },
+    {
+      "cca2": "MR",
+      "name": "Mauritania",
+      "aliases": [
+        "Mauritania",
+        "MR",
+        "Islamic Republic of Mauritania",
+        "al-Jumhūriyyah al-ʾIslāmiyyah al-Mūrītāniyyah"
+      ]
+    },
+    {
+      "cca2": "MU",
+      "name": "Mauritius",
+      "aliases": [
+        "Mauritius",
+        "MU",
+        "Republic of Mauritius",
+        "République de Maurice"
+      ]
+    },
+    {
+      "cca2": "YT",
+      "name": "Mayotte",
+      "aliases": [
+        "Mayotte",
+        "YT",
+        "Department of Mayotte",
+        "Département de Mayotte"
+      ]
+    },
+    {
+      "cca2": "MX",
+      "name": "Mexico",
+      "aliases": [
+        "Mexico",
+        "MX",
+        "Mexicanos",
+        "United Mexican States",
+        "Estados Unidos Mexicanos"
+      ]
+    },
+    {
+      "cca2": "FM",
+      "name": "Micronesia",
+      "aliases": [
+        "Micronesia",
+        "FM",
+        "Federated States of Micronesia",
+        "Micronesia, Federated States of"
+      ]
+    },
+    {
+      "cca2": "MD",
+      "name": "Moldova",
+      "aliases": [
+        "Moldova",
+        "MD",
+        "Moldova, Republic of",
+        "Republic of Moldova",
+        "Republica Moldova"
+      ]
+    },
+    {
+      "cca2": "MC",
+      "name": "Monaco",
+      "aliases": [
+        "Monaco",
+        "MC",
+        "Principality of Monaco",
+        "Principauté de Monaco"
+      ]
+    },
+    {
+      "cca2": "MN",
+      "name": "Mongolia",
+      "aliases": [
+        "Mongolia",
+        "MN"
+      ]
+    },
+    {
+      "cca2": "ME",
+      "name": "Montenegro",
+      "aliases": [
+        "Montenegro",
+        "ME",
+        "Crna Gora"
+      ]
+    },
+    {
+      "cca2": "MS",
+      "name": "Montserrat",
+      "aliases": [
+        "Montserrat",
+        "MS"
+      ]
+    },
+    {
+      "cca2": "MA",
+      "name": "Morocco",
+      "aliases": [
+        "Morocco",
+        "MA",
+        "Kingdom of Morocco",
+        "Al-Mamlakah al-Maġribiyah"
+      ]
+    },
+    {
+      "cca2": "MZ",
+      "name": "Mozambique",
+      "aliases": [
+        "Mozambique",
+        "MZ",
+        "Republic of Mozambique",
+        "República de Moçambique"
+      ]
+    },
+    {
+      "cca2": "MM",
+      "name": "Myanmar",
+      "aliases": [
+        "Myanmar",
+        "MM",
+        "Burma",
+        "Republic of the Union of Myanmar",
+        "Pyidaunzu Thanmăda Myăma Nainngandaw"
+      ]
+    },
+    {
+      "cca2": "NA",
+      "name": "Namibia",
+      "aliases": [
+        "Namibia",
+        "NA",
+        "Namibië",
+        "Republic of Namibia"
+      ]
+    },
+    {
+      "cca2": "NR",
+      "name": "Nauru",
+      "aliases": [
+        "Nauru",
+        "NR",
+        "Naoero",
+        "Pleasant Island",
+        "Republic of Nauru",
+        "Ripublik Naoero"
+      ]
+    },
+    {
+      "cca2": "NP",
+      "name": "Nepal",
+      "aliases": [
+        "Nepal",
+        "NP",
+        "Federal Democratic Republic of Nepal",
+        "Loktāntrik Ganatantra Nepāl"
+      ]
+    },
+    {
+      "cca2": "NL",
+      "name": "Netherlands",
+      "aliases": [
+        "Netherlands",
+        "NL",
+        "Holland",
+        "Nederland",
+        "The Netherlands",
+        "Kingdom of the Netherlands"
+      ]
+    },
+    {
+      "cca2": "NC",
+      "name": "New Caledonia",
+      "aliases": [
+        "New Caledonia",
+        "NC"
+      ]
+    },
+    {
+      "cca2": "NZ",
+      "name": "New Zealand",
+      "aliases": [
+        "New Zealand",
+        "NZ",
+        "Aotearoa"
+      ]
+    },
+    {
+      "cca2": "NI",
+      "name": "Nicaragua",
+      "aliases": [
+        "Nicaragua",
+        "NI",
+        "Republic of Nicaragua",
+        "República de Nicaragua"
+      ]
+    },
+    {
+      "cca2": "NE",
+      "name": "Niger",
+      "aliases": [
+        "Niger",
+        "NE",
+        "Nijar",
+        "Republic of Niger"
+      ]
+    },
+    {
+      "cca2": "NG",
+      "name": "Nigeria",
+      "aliases": [
+        "Nigeria",
+        "NG",
+        "Nijeriya",
+        "Naíjíríà",
+        "Federal Republic of Nigeria"
+      ]
+    },
+    {
+      "cca2": "NU",
+      "name": "Niue",
+      "aliases": [
+        "Niue",
+        "NU"
+      ]
+    },
+    {
+      "cca2": "NF",
+      "name": "Norfolk Island",
+      "aliases": [
+        "Norfolk Island",
+        "NF",
+        "Territory of Norfolk Island",
+        "Teratri of Norf'k Ailen"
+      ]
+    },
+    {
+      "cca2": "KP",
+      "name": "North Korea",
+      "aliases": [
+        "North Korea",
+        "KP",
+        "Democratic People's Republic of Korea",
+        "DPRK",
+        "조선민주주의인민공화국",
+        "Chosŏn Minjujuŭi Inmin Konghwaguk",
+        "Korea, Democratic People's Republic of",
+        "북한",
+        "북조선"
+      ]
+    },
+    {
+      "cca2": "MK",
+      "name": "North Macedonia",
+      "aliases": [
+        "North Macedonia",
+        "MK",
+        "The former Yugoslav Republic of Macedonia",
+        "Republic of North Macedonia",
+        "Macedonia, The Former Yugoslav Republic of",
+        "Република Северна Македонија"
+      ]
+    },
+    {
+      "cca2": "MP",
+      "name": "Northern Mariana Islands",
+      "aliases": [
+        "Northern Mariana Islands",
+        "MP",
+        "Commonwealth of the Northern Mariana Islands",
+        "Sankattan Siha Na Islas Mariånas"
+      ]
+    },
+    {
+      "cca2": "NO",
+      "name": "Norway",
+      "aliases": [
+        "Norway",
+        "NO",
+        "Norge",
+        "Noreg",
+        "Kingdom of Norway",
+        "Kongeriket Norge",
+        "Kongeriket Noreg"
+      ]
+    },
+    {
+      "cca2": "OM",
+      "name": "Oman",
+      "aliases": [
+        "Oman",
+        "OM",
+        "Sultanate of Oman",
+        "Salṭanat ʻUmān"
+      ]
+    },
+    {
+      "cca2": "PK",
+      "name": "Pakistan",
+      "aliases": [
+        "Pakistan",
+        "PK",
+        "Pākistān",
+        "Islamic Republic of Pakistan",
+        "Islāmī Jumhūriya'eh Pākistān"
+      ]
+    },
+    {
+      "cca2": "PW",
+      "name": "Palau",
+      "aliases": [
+        "Palau",
+        "PW",
+        "Republic of Palau",
+        "Beluu er a Belau"
+      ]
+    },
+    {
+      "cca2": "PS",
+      "name": "Palestine",
+      "aliases": [
+        "Palestine",
+        "PS",
+        "Palestine, State of",
+        "State of Palestine",
+        "Dawlat Filasṭin"
+      ]
+    },
+    {
+      "cca2": "PA",
+      "name": "Panama",
+      "aliases": [
+        "Panama",
+        "PA",
+        "Republic of Panama",
+        "República de Panamá"
+      ]
+    },
+    {
+      "cca2": "PG",
+      "name": "Papua New Guinea",
+      "aliases": [
+        "Papua New Guinea",
+        "PG",
+        "Independent State of Papua New Guinea",
+        "Independen Stet bilong Papua Niugini"
+      ]
+    },
+    {
+      "cca2": "PY",
+      "name": "Paraguay",
+      "aliases": [
+        "Paraguay",
+        "PY",
+        "Republic of Paraguay",
+        "República del Paraguay",
+        "Tetã Paraguái"
+      ]
+    },
+    {
+      "cca2": "PE",
+      "name": "Peru",
+      "aliases": [
+        "Peru",
+        "PE",
+        "Republic of Peru",
+        "República del Perú"
+      ]
+    },
+    {
+      "cca2": "PH",
+      "name": "Philippines",
+      "aliases": [
+        "Philippines",
+        "PH",
+        "Republic of the Philippines",
+        "Repúblika ng Pilipinas"
+      ]
+    },
+    {
+      "cca2": "PN",
+      "name": "Pitcairn Islands",
+      "aliases": [
+        "Pitcairn Islands",
+        "PN",
+        "Pitcairn",
+        "Pitcairn Henderson Ducie and Oeno Islands",
+        "Pitcairn Group of Islands"
+      ]
+    },
+    {
+      "cca2": "PL",
+      "name": "Poland",
+      "aliases": [
+        "Poland",
+        "PL",
+        "Republic of Poland",
+        "Rzeczpospolita Polska"
+      ]
+    },
+    {
+      "cca2": "PT",
+      "name": "Portugal",
+      "aliases": [
+        "Portugal",
+        "PT",
+        "Portuguesa",
+        "Portuguese Republic",
+        "República Portuguesa"
+      ]
+    },
+    {
+      "cca2": "PR",
+      "name": "Puerto Rico",
+      "aliases": [
+        "Puerto Rico",
+        "PR",
+        "Commonwealth of Puerto Rico",
+        "Estado Libre Asociado de Puerto Rico"
+      ]
+    },
+    {
+      "cca2": "QA",
+      "name": "Qatar",
+      "aliases": [
+        "Qatar",
+        "QA",
+        "State of Qatar",
+        "Dawlat Qaṭar"
+      ]
+    },
+    {
+      "cca2": "CG",
+      "name": "Republic of the Congo",
+      "aliases": [
+        "Republic of the Congo",
+        "CG",
+        "Congo",
+        "Congo-Brazzaville"
+      ]
+    },
+    {
+      "cca2": "RO",
+      "name": "Romania",
+      "aliases": [
+        "Romania",
+        "RO",
+        "Rumania",
+        "Roumania",
+        "România"
+      ]
+    },
+    {
+      "cca2": "RU",
+      "name": "Russia",
+      "aliases": [
+        "Russia",
+        "RU",
+        "Russian Federation",
+        "Российская Федерация"
+      ]
+    },
+    {
+      "cca2": "RW",
+      "name": "Rwanda",
+      "aliases": [
+        "Rwanda",
+        "RW",
+        "Republic of Rwanda",
+        "Repubulika y'u Rwanda",
+        "République du Rwanda"
+      ]
+    },
+    {
+      "cca2": "RE",
+      "name": "Réunion",
+      "aliases": [
+        "Réunion",
+        "RE",
+        "Reunion",
+        "Réunion Island"
+      ]
+    },
+    {
+      "cca2": "BL",
+      "name": "Saint Barthélemy",
+      "aliases": [
+        "Saint Barthélemy",
+        "BL",
+        "St. Barthelemy",
+        "Collectivity of Saint Barthélemy",
+        "Collectivité de Saint-Barthélemy"
+      ]
+    },
+    {
+      "cca2": "SH",
+      "name": "Saint Helena, Ascension and Tristan da Cunha",
+      "aliases": [
+        "Saint Helena, Ascension and Tristan da Cunha",
+        "Saint Helena",
+        "St. Helena, Ascension and Tristan da Cunha"
+      ]
+    },
+    {
+      "cca2": "KN",
+      "name": "Saint Kitts and Nevis",
+      "aliases": [
+        "Saint Kitts and Nevis",
+        "KN",
+        "Federation of Saint Christopher and Nevis"
+      ]
+    },
+    {
+      "cca2": "LC",
+      "name": "Saint Lucia",
+      "aliases": [
+        "Saint Lucia",
+        "LC"
+      ]
+    },
+    {
+      "cca2": "MF",
+      "name": "Saint Martin",
+      "aliases": [
+        "Saint Martin",
+        "MF",
+        "Collectivity of Saint Martin",
+        "Collectivité de Saint-Martin",
+        "Saint Martin (French part)"
+      ]
+    },
+    {
+      "cca2": "PM",
+      "name": "Saint Pierre and Miquelon",
+      "aliases": [
+        "Saint Pierre and Miquelon",
+        "PM",
+        "Collectivité territoriale de Saint-Pierre-et-Miquelon"
+      ]
+    },
+    {
+      "cca2": "VC",
+      "name": "Saint Vincent and the Grenadines",
+      "aliases": [
+        "Saint Vincent and the Grenadines",
+        "VC"
+      ]
+    },
+    {
+      "cca2": "WS",
+      "name": "Samoa",
+      "aliases": [
+        "Samoa",
+        "WS",
+        "Independent State of Samoa",
+        "Malo Saʻoloto Tutoʻatasi o Sāmoa"
+      ]
+    },
+    {
+      "cca2": "SM",
+      "name": "San Marino",
+      "aliases": [
+        "San Marino",
+        "SM",
+        "Republic of San Marino",
+        "Repubblica di San Marino"
+      ]
+    },
+    {
+      "cca2": "SA",
+      "name": "Saudi Arabia",
+      "aliases": [
+        "Saudi Arabia",
+        "Saudi",
+        "SA",
+        "Kingdom of Saudi Arabia",
+        "Al-Mamlakah al-‘Arabiyyah as-Su‘ūdiyyah"
+      ]
+    },
+    {
+      "cca2": "SN",
+      "name": "Senegal",
+      "aliases": [
+        "Senegal",
+        "SN",
+        "Republic of Senegal",
+        "République du Sénégal"
+      ]
+    },
+    {
+      "cca2": "RS",
+      "name": "Serbia",
+      "aliases": [
+        "Serbia",
+        "RS",
+        "Srbija",
+        "Republic of Serbia",
+        "Република Србија",
+        "Republika Srbija"
+      ]
+    },
+    {
+      "cca2": "SC",
+      "name": "Seychelles",
+      "aliases": [
+        "Seychelles",
+        "SC",
+        "Republic of Seychelles",
+        "Repiblik Sesel",
+        "République des Seychelles"
+      ]
+    },
+    {
+      "cca2": "SL",
+      "name": "Sierra Leone",
+      "aliases": [
+        "Sierra Leone",
+        "SL",
+        "Republic of Sierra Leone"
+      ]
+    },
+    {
+      "cca2": "SG",
+      "name": "Singapore",
+      "aliases": [
+        "Singapore",
+        "SG",
+        "Singapura",
+        "Republik Singapura",
+        "新加坡共和国",
+        "Republic of Singapore"
+      ]
+    },
+    {
+      "cca2": "SX",
+      "name": "Sint Maarten",
+      "aliases": [
+        "Sint Maarten",
+        "SX",
+        "Sint Maarten (Dutch part)"
+      ]
+    },
+    {
+      "cca2": "SK",
+      "name": "Slovakia",
+      "aliases": [
+        "Slovakia",
+        "SK",
+        "Slovak Republic",
+        "Slovenská republika"
+      ]
+    },
+    {
+      "cca2": "SI",
+      "name": "Slovenia",
+      "aliases": [
+        "Slovenia",
+        "SI",
+        "Republic of Slovenia",
+        "Republika Slovenija"
+      ]
+    },
+    {
+      "cca2": "SB",
+      "name": "Solomon Islands",
+      "aliases": [
+        "Solomon Islands",
+        "SB"
+      ]
+    },
+    {
+      "cca2": "SO",
+      "name": "Somalia",
+      "aliases": [
+        "Somalia",
+        "SO",
+        "aṣ-Ṣūmāl",
+        "Federal Republic of Somalia",
+        "Jamhuuriyadda Federaalka Soomaaliya",
+        "Jumhūriyyat aṣ-Ṣūmāl al-Fiderāliyya"
+      ]
+    },
+    {
+      "cca2": "ZA",
+      "name": "South Africa",
+      "aliases": [
+        "South Africa",
+        "ZA",
+        "RSA",
+        "Suid-Afrika",
+        "Republic of South Africa"
+      ]
+    },
+    {
+      "cca2": "GS",
+      "name": "South Georgia",
+      "aliases": [
+        "South Georgia",
+        "GS",
+        "South Georgia and the South Sandwich Islands"
+      ]
+    },
+    {
+      "cca2": "KR",
+      "name": "South Korea",
+      "aliases": [
+        "South Korea",
+        "KR",
+        "Korea, Republic of",
+        "Republic of Korea",
+        "남한",
+        "남조선"
+      ]
+    },
+    {
+      "cca2": "SS",
+      "name": "South Sudan",
+      "aliases": [
+        "South Sudan",
+        "SS",
+        "Republic of South Sudan"
+      ]
+    },
+    {
+      "cca2": "ES",
+      "name": "Spain",
+      "aliases": [
+        "Spain",
+        "ES",
+        "Kingdom of Spain",
+        "Reino de España"
+      ]
+    },
+    {
+      "cca2": "LK",
+      "name": "Sri Lanka",
+      "aliases": [
+        "Sri Lanka",
+        "LK",
+        "ilaṅkai",
+        "Democratic Socialist Republic of Sri Lanka"
+      ]
+    },
+    {
+      "cca2": "SD",
+      "name": "Sudan",
+      "aliases": [
+        "Sudan",
+        "SD",
+        "Republic of the Sudan",
+        "Jumhūrīyat as-Sūdān"
+      ]
+    },
+    {
+      "cca2": "SR",
+      "name": "Suriname",
+      "aliases": [
+        "Suriname",
+        "SR",
+        "Sarnam",
+        "Sranangron",
+        "Republic of Suriname",
+        "Republiek Suriname"
+      ]
+    },
+    {
+      "cca2": "SJ",
+      "name": "Svalbard and Jan Mayen",
+      "aliases": [
+        "Svalbard and Jan Mayen",
+        "SJ",
+        "Svalbard and Jan Mayen Islands",
+        "Svalbard og Jan Mayen"
+      ]
+    },
+    {
+      "cca2": "SE",
+      "name": "Sweden",
+      "aliases": [
+        "Sweden",
+        "SE",
+        "Kingdom of Sweden",
+        "Konungariket Sverige"
+      ]
+    },
+    {
+      "cca2": "CH",
+      "name": "Switzerland",
+      "aliases": [
+        "Switzerland",
+        "CH",
+        "Swiss Confederation",
+        "Schweiz",
+        "Suisse",
+        "Svizzera",
+        "Svizra"
+      ]
+    },
+    {
+      "cca2": "SY",
+      "name": "Syria",
+      "aliases": [
+        "Syria",
+        "SY",
+        "Syrian Arab Republic",
+        "Al-Jumhūrīyah Al-ʻArabīyah As-Sūrīyah"
+      ]
+    },
+    {
+      "cca2": "ST",
+      "name": "São Tomé and Príncipe",
+      "aliases": [
+        "São Tomé and Príncipe",
+        "ST",
+        "Democratic Republic of São Tomé and Príncipe",
+        "Sao Tome and Principe",
+        "República Democrática de São Tomé e Príncipe"
+      ]
+    },
+    {
+      "cca2": "TW",
+      "name": "Taiwan",
+      "aliases": [
+        "Taiwan",
+        "TW",
+        "Táiwān",
+        "Republic of China",
+        "中華民國",
+        "Zhōnghuá Mínguó",
+        "Chinese Taipei",
+        "Republic of China (Taiwan)"
+      ]
+    },
+    {
+      "cca2": "TJ",
+      "name": "Tajikistan",
+      "aliases": [
+        "Tajikistan",
+        "TJ",
+        "Toçikiston",
+        "Republic of Tajikistan",
+        "Ҷумҳурии Тоҷикистон",
+        "Çumhuriyi Toçikiston"
+      ]
+    },
+    {
+      "cca2": "TZ",
+      "name": "Tanzania",
+      "aliases": [
+        "Tanzania",
+        "TZ",
+        "Tanzania, United Republic of",
+        "United Republic of Tanzania",
+        "Jamhuri ya Muungano wa Tanzania"
+      ]
+    },
+    {
+      "cca2": "TH",
+      "name": "Thailand",
+      "aliases": [
+        "Thailand",
+        "TH",
+        "Prathet",
+        "Thai",
+        "Kingdom of Thailand",
+        "ราชอาณาจักรไทย",
+        "Ratcha Anachak Thai"
+      ]
+    },
+    {
+      "cca2": "TL",
+      "name": "Timor-Leste",
+      "aliases": [
+        "Timor-Leste",
+        "TL",
+        "East Timor",
+        "Democratic Republic of Timor-Leste",
+        "República Democrática de Timor-Leste",
+        "Repúblika Demokrátika Timór-Leste",
+        "Timór Lorosa'e",
+        "Timor Lorosae"
+      ]
+    },
+    {
+      "cca2": "TG",
+      "name": "Togo",
+      "aliases": [
+        "Togo",
+        "TG",
+        "Togolese",
+        "Togolese Republic",
+        "République Togolaise"
+      ]
+    },
+    {
+      "cca2": "TK",
+      "name": "Tokelau",
+      "aliases": [
+        "Tokelau",
+        "TK"
+      ]
+    },
+    {
+      "cca2": "TO",
+      "name": "Tonga",
+      "aliases": [
+        "Tonga",
+        "TO",
+        "Kingdom of Tonga"
+      ]
+    },
+    {
+      "cca2": "TT",
+      "name": "Trinidad and Tobago",
+      "aliases": [
+        "Trinidad and Tobago",
+        "TT",
+        "Republic of Trinidad and Tobago"
+      ]
+    },
+    {
+      "cca2": "TN",
+      "name": "Tunisia",
+      "aliases": [
+        "Tunisia",
+        "TN",
+        "Republic of Tunisia",
+        "al-Jumhūriyyah at-Tūnisiyyah",
+        "Tunisian Republic"
+      ]
+    },
+    {
+      "cca2": "TR",
+      "name": "Turkey",
+      "aliases": [
+        "Turkey",
+        "TR",
+        "Turkiye",
+        "Republic of Turkey",
+        "Türkiye Cumhuriyeti"
+      ]
+    },
+    {
+      "cca2": "TM",
+      "name": "Turkmenistan",
+      "aliases": [
+        "Turkmenistan",
+        "TM"
+      ]
+    },
+    {
+      "cca2": "TC",
+      "name": "Turks and Caicos Islands",
+      "aliases": [
+        "Turks and Caicos Islands",
+        "TC"
+      ]
+    },
+    {
+      "cca2": "TV",
+      "name": "Tuvalu",
+      "aliases": [
+        "Tuvalu",
+        "TV"
+      ]
+    },
+    {
+      "cca2": "UG",
+      "name": "Uganda",
+      "aliases": [
+        "Uganda",
+        "UG",
+        "Republic of Uganda",
+        "Jamhuri ya Uganda"
+      ]
+    },
+    {
+      "cca2": "UA",
+      "name": "Ukraine",
+      "aliases": [
+        "Ukraine",
+        "UA",
+        "Ukrayina"
+      ]
+    },
+    {
+      "cca2": "AE",
+      "name": "United Arab Emirates",
+      "aliases": [
+        "United Arab Emirates",
+        "AE",
+        "UAE",
+        "Emirates"
+      ]
+    },
+    {
+      "cca2": "GB",
+      "name": "United Kingdom",
+      "aliases": [
+        "United Kingdom",
+        "GB",
+        "UK",
+        "Great Britain",
+        "United Kingdom of Great Britain and Northern Ireland"
+      ]
+    },
+    {
+      "cca2": "US",
+      "name": "United States",
+      "aliases": [
+        "United States",
+        "US",
+        "USA",
+        "United States of America"
+      ]
+    },
+    {
+      "cca2": "UM",
+      "name": "United States Minor Outlying Islands",
+      "aliases": [
+        "United States Minor Outlying Islands",
+        "UM"
+      ]
+    },
+    {
+      "cca2": "VI",
+      "name": "United States Virgin Islands",
+      "aliases": [
+        "United States Virgin Islands",
+        "VI",
+        "Virgin Islands, U.S.",
+        "Virgin Islands of the United States"
+      ]
+    },
+    {
+      "cca2": "UY",
+      "name": "Uruguay",
+      "aliases": [
+        "Uruguay",
+        "UY",
+        "Oriental Republic of Uruguay",
+        "República Oriental del Uruguay"
+      ]
+    },
+    {
+      "cca2": "UZ",
+      "name": "Uzbekistan",
+      "aliases": [
+        "Uzbekistan",
+        "UZ",
+        "Republic of Uzbekistan",
+        "O‘zbekiston Respublikasi",
+        "Ўзбекистон Республикаси"
+      ]
+    },
+    {
+      "cca2": "VU",
+      "name": "Vanuatu",
+      "aliases": [
+        "Vanuatu",
+        "VU",
+        "Republic of Vanuatu",
+        "Ripablik blong Vanuatu",
+        "République de Vanuatu"
+      ]
+    },
+    {
+      "cca2": "VA",
+      "name": "Vatican City",
+      "aliases": [
+        "Vatican City",
+        "VA",
+        "Holy See (Vatican City State)",
+        "Vatican City State",
+        "Stato della Città del Vaticano"
+      ]
+    },
+    {
+      "cca2": "VE",
+      "name": "Venezuela",
+      "aliases": [
+        "Venezuela",
+        "VE",
+        "Bolivarian Republic of Venezuela",
+        "Venezuela, Bolivarian Republic of",
+        "República Bolivariana de Venezuela"
+      ]
+    },
+    {
+      "cca2": "VN",
+      "name": "Vietnam",
+      "aliases": [
+        "Vietnam",
+        "VN",
+        "Socialist Republic of Vietnam",
+        "Cộng hòa Xã hội chủ nghĩa Việt Nam",
+        "Viet Nam"
+      ]
+    },
+    {
+      "cca2": "WF",
+      "name": "Wallis and Futuna",
+      "aliases": [
+        "Wallis and Futuna",
+        "WF",
+        "Territory of the Wallis and Futuna Islands",
+        "Territoire des îles Wallis et Futuna"
+      ]
+    },
+    {
+      "cca2": "EH",
+      "name": "Western Sahara",
+      "aliases": [
+        "Western Sahara",
+        "EH",
+        "Taneẓroft Tutrimt",
+        "Sahrawi Arab Democratic Republic"
+      ]
+    },
+    {
+      "cca2": "YE",
+      "name": "Yemen",
+      "aliases": [
+        "Yemen",
+        "YE",
+        "Yemeni Republic",
+        "al-Jumhūriyyah al-Yamaniyyah",
+        "Republic of Yemen"
+      ]
+    },
+    {
+      "cca2": "ZM",
+      "name": "Zambia",
+      "aliases": [
+        "Zambia",
+        "ZM",
+        "Republic of Zambia"
+      ]
+    },
+    {
+      "cca2": "ZW",
+      "name": "Zimbabwe",
+      "aliases": [
+        "Zimbabwe",
+        "ZW",
+        "Republic of Zimbabwe"
+      ]
+    },
+    {
+      "cca2": "AX",
+      "name": "Åland Islands",
+      "aliases": [
+        "Åland Islands",
+        "AX",
+        "Aaland",
+        "Aland",
+        "Ahvenanmaa"
+      ]
+    }
+  ]
+}

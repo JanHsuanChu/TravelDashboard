@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Dashboard - Trip Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .input-label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+        .input-sublabel { font-size: 0.75rem; font-weight: 400; color: #6b7280; }
+        .input-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; outline: none; transition: border-color 0.15s; }
+        .input-field:focus { border-color: #3b82f6; }
+        .btn-primary { background-color: #2563eb; color: white; padding: 0.625rem 1.25rem; border-radius: 0.375rem; font-weight: 500; transition: background-color 0.2s; border: none; cursor: pointer; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; background-color: #e0e7ff; color: #4338ca; }
+        .food-section { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #fafafa; }
+        .food-section h4 { font-size: 0.8125rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem; }
+        .output-subhead { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">T</div>
+            <span class="text-xl font-bold tracking-tight text-gray-900">Travel Dashboard</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-900">Preferences</a>
+            <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-900">History</a>
+            <div class="w-8 h-8 rounded-full bg-gray-200 border border-gray-300"></div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full p-6 flex flex-col gap-6">
+
+        <section class="card p-6">
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-gray-900">Plan Your Trip</h2>
+                <p class="text-sm text-gray-500">Enter your destination and preferences to generate a personalized itinerary.</p>
+            </div>
+
+            <!-- Row 1: destination + compare rows + when -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="input-group lg:col-span-3">
+                    <label class="input-label">Where I am going</label>
+                    <span class="input-sublabel">Country required · City optional</span>
+                    <div class="flex gap-2">
+                        <input type="text" class="input-field" placeholder="Country" value="Japan" aria-label="Destination country">
+                        <input type="text" class="input-field" placeholder="City (optional)" value="Kyoto" aria-label="Destination city (optional)">
+                    </div>
+                </div>
+
+                <div class="input-group lg:col-span-5">
+                    <label class="input-label">Compare with <span class="font-normal text-gray-500">(optional)</span></label>
+                    <span class="input-sublabel">Two rows · Country + optional city each</span>
+                    <div class="space-y-2">
+                        <div class="flex gap-2 items-center">
+                            <span class="text-xs text-gray-400 w-5 shrink-0">1</span>
+                            <input type="text" class="input-field" placeholder="Country" value="Thailand" aria-label="Compare country 1">
+                            <input type="text" class="input-field" placeholder="City (optional)" value="Chiang Mai" aria-label="Compare city 1 (optional)">
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-xs text-gray-400 w-5 shrink-0">2</span>
+                            <input type="text" class="input-field" placeholder="Country" value="Italy" aria-label="Compare country 2">
+                            <input type="text" class="input-field" placeholder="City (optional)" value="" aria-label="Compare city 2 (optional)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group lg:col-span-4">
+                    <label class="input-label">When</label>
+                    <span class="input-sublabel">Use either season or month (one applies per trip)</span>
+                    <div class="flex flex-wrap gap-4 mb-2">
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="radio" name="when-granularity" value="season" checked class="text-blue-600">
+                            Season
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="radio" name="when-granularity" value="month" class="text-blue-600">
+                            Month
+                        </label>
+                    </div>
+                    <label class="input-sublabel block" for="when-season">Season</label>
+                    <select id="when-season" class="input-field bg-white" aria-label="Season">
+                        <option>Spring (Mar–May)</option>
+                        <option selected>Summer (Jun–Aug)</option>
+                        <option>Autumn (Sep–Nov)</option>
+                        <option>Winter (Dec–Feb)</option>
+                    </select>
+                    <label class="input-sublabel mt-2 block" for="when-month">Month</label>
+                    <select id="when-month" class="input-field bg-white" aria-label="Month">
+                        <option value="" selected>—</option>
+                        <option>January</option>
+                        <option>February</option>
+                        <option>March</option>
+                        <option>April</option>
+                        <option>May</option>
+                        <option>June</option>
+                        <option>July</option>
+                        <option>August</option>
+                        <option>September</option>
+                        <option>October</option>
+                        <option>November</option>
+                        <option>December</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Food preferences: more space, three blocks -->
+            <div class="mt-6">
+                <label class="input-label block mb-3">Food preferences</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="food-section">
+                        <h4>Food I like</h4>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" checked class="rounded text-blue-600"> Street food
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" checked class="rounded text-blue-600"> Spicy
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Seafood
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Noodles
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Local specialties
+                            </label>
+                        </div>
+                        <input type="text" class="input-field text-sm" placeholder="Add anything else you enjoy…">
+                    </div>
+                    <div class="food-section">
+                        <h4>Food I dislike</h4>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Very sweet
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Offal
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Raw fish
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Heavy cream
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Fast food chains
+                            </label>
+                        </div>
+                        <input type="text" class="input-field text-sm" placeholder="Other foods to avoid…">
+                    </div>
+                    <div class="food-section">
+                        <h4>Dietary restrictions</h4>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Vegetarian
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Vegan
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Halal
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Kosher
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                                <input type="checkbox" class="rounded text-blue-600"> Gluten-free
+                            </label>
+                        </div>
+                        <input type="text" class="input-field text-sm" placeholder="Allergies or other restrictions…">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button type="button" class="btn-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Generate Recommendations
+                </button>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+
+            <!-- Dining: dishes + places -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        Dining recommendations
+                    </h3>
+                    <span class="tag">Kyoto</span>
+                </div>
+
+                <div class="space-y-5 overflow-y-auto flex-1">
+                    <div>
+                        <p class="output-subhead">Dishes</p>
+                        <div class="space-y-2">
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-medium text-sm text-gray-900">Kaiseki (seasonal multi-course)</h4>
+                                    <span class="text-xs text-green-600 font-medium">96% match</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Aligns with local specialties and fine pacing; note spice is usually mild.</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-medium text-sm text-gray-900">Yudofu (tofu hot pot)</h4>
+                                    <span class="text-xs text-blue-600 font-medium">Comfort</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Great in summer evenings in the hills; easy to keep non-spicy.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="output-subhead">Places</p>
+                        <div class="space-y-2">
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-medium text-sm text-gray-900">Nishiki Market</h4>
+                                    <span class="text-xs text-green-600 font-medium">98% match</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Street food stalls, pickles, seafood — fits “street food” + spicy options nearby.</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-medium text-sm text-gray-900">Gion Kappo Sakamoto</h4>
+                                    <span class="text-xs text-blue-600 font-medium">Reservations</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Kaiseki; book ahead. Good for a splurge night.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="mt-auto pt-4 text-sm text-blue-600 font-medium hover:text-blue-800 text-left">View full list →</button>
+            </div>
+
+            <!-- Essential info -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Essential info
+                    </h3>
+                    <span class="tag">Summer</span>
+                </div>
+                <div class="space-y-5 flex-1">
+                    <div>
+                        <p class="output-subhead">Travel advisory</p>
+                        <p class="text-sm text-gray-600">Japan is generally low risk for tourists. Usual guidance: register with your embassy for long stays, carry copies of ID, and confirm any regional health notices before travel.</p>
+                    </div>
+                    <div>
+                        <p class="output-subhead">Weather forecast</p>
+                        <p class="text-sm text-gray-600">Kyoto in summer: warm and humid, frequent rain. Pack light layers, umbrella, and plan indoor or early-morning outings.</p>
+                    </div>
+                    <div>
+                        <p class="output-subhead">News headlines</p>
+                        <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+                            <li>Transit updates: major rail lines running on schedule.</li>
+                            <li>Local festival calendar: check Gion-area event crowds for July.</li>
+                            <li>No major alerts for the selected window (mock data).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Travel friendliness -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Travel friendliness
+                    </h3>
+                    <span class="tag">Scores</span>
+                </div>
+                <div class="space-y-5 flex-1">
+                    <div>
+                        <p class="output-subhead">Where I am going</p>
+                        <div class="flex items-center gap-4">
+                            <div class="text-4xl font-bold text-gray-900 tabular-nums">87</div>
+                            <div class="text-sm text-gray-500 flex-1">Japan · Kyoto — strong transit, food safety, and English signage in tourist areas (mock score).</div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="output-subhead">Compared with</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+                                <span class="text-gray-700">Thailand · Chiang Mai</span>
+                                <span class="font-semibold text-gray-900 tabular-nums">82</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+                                <span class="text-gray-700">Italy <span class="text-gray-400">(country)</span></span>
+                                <span class="font-semibold text-gray-900 tabular-nums">84</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Comparison uses the same rubric (safety, ease of getting around, language, dining fit, season). Higher is friendlier for your profile.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

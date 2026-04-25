@@ -1,0 +1,58 @@
+{
+  "development_plan": {
+    "database": {
+      "recommendation": "PostgreSQL with Prisma ORM",
+      "schema_outline": [
+        "users (id, email, created_at)",
+        "preferences (user_id, dietary_restrictions, food_likes, food_dislikes)",
+        "trips (id, user_id, destination, start_date, end_date)",
+        "trip_outputs (trip_id, dining_recommendations, advisories, friendliness_score)"
+      ],
+      "rationale": "Relational data for users/trips combined with JSONB flexibility for AI-generated content and varying preference structures."
+    },
+    "api": {
+      "recommendation": "Next.js API Routes",
+      "endpoints_outline": [
+        "POST /api/plan (generate trip plan)",
+        "POST /api/compare (compare multiple destinations)",
+        "GET /api/preferences (fetch user settings)",
+        "PUT /api/preferences (update user settings)"
+      ],
+      "rationale": "Unified frontend/backend framework reduces latency and simplifies deployment on Vercel while maintaining type safety."
+    },
+    "app_ui": {
+      "recommendation": "Next.js 14 + Tailwind CSS + Shadcn/UI",
+      "screens": [
+        "Dashboard (Input/Output Split)",
+        "Preferences Settings"
+      ],
+      "layout_plan": "Two-section vertical split: Top 50% for input forms (grid layout), Bottom 50% for three equal-width output cards.",
+      "component_plan": [
+        "InputForm (Destination, Dates, Prefs)",
+        "OutputCard (Reusable container)",
+        "ScoreGauge (Visual score display)",
+        "PreferenceSelector (Checkbox/Radio groups)"
+      ],
+      "ui_notes": "Responsive design required; output cards stack vertically on mobile. Use loading skeletons during AI generation."
+    },
+    "ai_reporter": {
+      "recommended_model": "llama3.2",
+      "model_rationale": "Optimized for low latency and high performance on structured tasks. Capable of reliable JSON output for scores and lists, balancing reasoning quality with cost efficiency compared to larger models.",
+      "alternatives_considered": [
+        "mistral",
+        "llama3.1"
+      ],
+      "prompt_strategy": "System prompt enforces JSON schema for outputs. Chain-of-thought used internally for score calculation before final JSON serialization."
+    },
+    "deployment": {
+      "recommendation": "Vercel (Frontend/API) + AI Provider API",
+      "rationale": "Vercel offers zero-config deployment for Next.js. Using an AI Provider API ensures uptime without managing GPU infrastructure, though local Ollama is viable for development."
+    }
+  },
+  "cursor_prompt": "Build a Travel Dashboard using Next.js 14 (App Router), Tailwind CSS, and Shadcn/UI. Create a single-page layout: top half for inputs (destination, dates, food prefs), bottom half for three output cards (Dining, Advisories, Score). Implement API routes at /api/plan to handle logic. Integrate AI using llama3.2 via Ollama or compatible API for generating JSON-structured recommendations and scores. Use PostgreSQL with Prisma for storing user preferences and trip history. Ensure responsive design (stack cards on mobile). Add error handling for API failures. Initialize with dummy data for testing. Focus on clean component separation: InputForm, OutputGrid, RecommendationCard.",
+  "open_questions_for_human": [
+    "Do you have existing API keys for external weather and news data sources?",
+    "Is user authentication required to save preferences, or should this be local-storage only?",
+    "Will the AI model be hosted locally via Ollama or accessed through a cloud provider?"
+  ]
+}
