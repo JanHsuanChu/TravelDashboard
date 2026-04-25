@@ -22,6 +22,14 @@ from shiny_app.ui import app_ui
 # Serve shiny_app/www at site root so client scripts can fetch /data/countries_slim.json.
 _APP_DIR = _SHINY_APP_DIR
 
+# Optional logging (console + file). Set TD_LOG_FILE=logs/app.log to enable file logging.
+try:
+    from shiny_app.logging_setup import configure_logging
+
+    configure_logging(app_root=_SHINY_APP_DIR)
+except Exception:
+    pass
+
 
 def _warm_embeddings_background() -> None:
     try:

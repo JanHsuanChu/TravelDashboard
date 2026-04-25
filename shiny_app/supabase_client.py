@@ -80,9 +80,12 @@ def get_supabase() -> Client:
     global _client, _client_env_sig
     _load_dotenv()
     url = _env_clean("SUPABASE_URL").rstrip("/")
-    key = _normalize_supabase_key(_env_clean("SUPABASE_KEY"))
+    # Prefer a server-side key when available (avoids RLS blocking reads on app_user/preference).
+    # SUPABASE_SERVICE_KEY must be a legacy JWT (starts with eyJ) like service_role.
+    raw_key = _env_clean("SUPABASE_SERVICE_KEY") or _env_clean("SUPABASE_KEY")
+    key = _normalize_supabase_key(raw_key)
     if not url or not key:
-        raise ValueError("Set SUPABASE_URL and SUPABASE_KEY in shiny_app/.env")
+        raise ValueError("Set SUPABASE_URL and SUPABASE_KEY (or SUPABASE_SERVICE_KEY) in shiny_app/.env")
 
     sig = (url, key)
     if _client is not None and _client_env_sig == sig:
@@ -215,3 +218,86 @@ def insert_preference(
     if ins.data:
         return ins.data[0] if isinstance(ins.data, list) else ins.data
     raise RuntimeError("Insert failed (no data returned).")
+
+
+# ----------------------------
+# Agentic loop memory helpers
+# ----------------------------
+
+
+def upsert_agent_session(
+    *,
+    session_id: str,
+    user_id: str | None,
+    destination: dict[str, Any] | None,
+) -> dict[str, Any]:
+    sb = get_supabase()
+    row = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "destination": destination or None,
+        "last_active_at": "now()",
+    }
+    # supabase-py doesn't expose PostgREST "now()" well; let DB default handle on insert.
+    # For updates we can just omit last_active_at; a trigger can manage it if desired.
+    ins = sb.table("agent_sessions").upsert(
+        {"session_id": session_id, "user_id": user_id, "destination": destination or None}
+    ).execute()
+    if ins.data:
+        return ins.data[0] if isinstance(ins.data, list) else ins.data
+    return {"session_id": session_id, "user_id": user_id, "destination": destination or None}
+
+
+def insert_agent_turn(
+    *,
+    session_id: str,
+    turn_idx: int,
+    role: str,
+    content: str,
+    json_payload: dict[str, Any] | None = None,
+) -> None:
+    sb = get_supabase()
+    sb.table("agent_turns").insert(
+        {
+            "session_id": session_id,
+            "turn_idx": int(turn_idx),
+            "role": role,
+            "content": content,
+            "json_payload": json_payload,
+        }
+    ).execute()
+
+
+def insert_agent_feedback(
+    *,
+    session_id: str,
+    user_id: str | None,
+    venue_name: str | None,
+    signal_type: str,
+    details: dict[str, Any] | None = None,
+) -> None:
+    sb = get_supabase()
+    sb.table("agent_feedback").insert(
+        {
+            "session_id": session_id,
+            "user_id": user_id,
+            "venue_name": venue_name,
+            "signal_type": signal_type,
+            "details": details,
+        }
+    ).execute()
+
+
+def fetch_user_reco_weights(*, user_id: str) -> dict[str, Any]:
+    sb = get_supabase()
+    r = sb.table("user_reco_weights").select("weights").eq("user_id", user_id).limit(1).execute()
+    if r.data:
+        row = r.data[0]
+        w = row.get("weights") if isinstance(row, dict) else None
+        return w if isinstance(w, dict) else {}
+    return {}
+
+
+def upsert_user_reco_weights(*, user_id: str, weights: dict[str, Any]) -> None:
+    sb = get_supabase()
+    sb.table("user_reco_weights").upsert({"user_id": user_id, "weights": weights}).execute()

@@ -110,6 +110,49 @@ _MAP_PLACE_ROW_CLICK_JS = ui.tags.script(
     """
 )
 
+_AGENT_CHIP_CLICK_JS = ui.tags.script(
+    """
+    document.addEventListener('click', function(ev) {
+      var chip = ev.target.closest('[data-td-agent-chip]');
+      if (!chip || !window.Shiny || !window.Shiny.setInputValue) return;
+      var msg = chip.getAttribute('data-td-agent-chip');
+      if (!msg) return;
+      Shiny.setInputValue('agent_quick_reply', msg, { priority: 'event' });
+    });
+    """
+)
+
+_CHAT_WIDGET_JS = ui.tags.script(
+    """
+    (function() {
+      function qs(sel){ return document.querySelector(sel); }
+      function openWidget(){
+        var el = qs('#td-chat-widget');
+        if (!el) return;
+        el.classList.add('td-chat-widget-open');
+      }
+      function closeWidget(){
+        var el = qs('#td-chat-widget');
+        if (!el) return;
+        el.classList.remove('td-chat-widget-open');
+      }
+      document.addEventListener('click', function(ev){
+        var t = ev.target;
+        if (!t) return;
+        if (t.closest('#td-chat-close')) { ev.preventDefault(); closeWidget(); return; }
+        if (t.closest('#td-chat-fab')) {
+          ev.preventDefault();
+          var el = qs('#td-chat-widget');
+          if (!el) return;
+          if (el.classList.contains('td-chat-widget-open')) closeWidget(); else openWidget();
+          return;
+        }
+        if (t.closest('#btn_generate')) { setTimeout(openWidget, 50); return; }
+      });
+    })();
+    """
+)
+
 # Bundled Fuse (CDN can be blocked; must load before td_trip_fields.js).
 _FUSE_JS = ui.include_js(path=APP_ROOT / "www" / "vendor" / "fuse.min.js")
 _TRIP_FIELDS_JS = ui.include_js(path=APP_ROOT / "www" / "td_trip_fields.js")
@@ -120,6 +163,8 @@ app_ui = ui.page_fillable(
         _INTER_FONT,
         ui.include_css(APP_ROOT / "www" / "custom.css"),
         _MAP_PLACE_ROW_CLICK_JS,
+        _AGENT_CHIP_CLICK_JS,
+        _CHAT_WIDGET_JS,
         _PREF_CLIENT_JS,
         _TD_COUNTRIES_EMBED_JS,
         _FUSE_JS,
@@ -145,6 +190,7 @@ app_ui = ui.page_fillable(
                         ),
                         class_="td-plan-header",
                     ),
+                    ui.div(),
                     ui.layout_columns(
                         destination_fields_content(),
                         compare_with_rows_content(),
@@ -152,7 +198,7 @@ app_ui = ui.page_fillable(
                         col_widths=(4, 4, 4),
                     ),
                     ui.div(
-                        food_preference_combined_content(),
+                        ui.output_ui("food_section_ui"),
                         class_="td-plan-food-row",
                     ),
                     ui.div(
@@ -203,6 +249,11 @@ app_ui = ui.page_fillable(
                                     "Generate recommendations",
                                     class_="btn td-btn-primary-mockup",
                                 ),
+                                ui.input_action_button(
+                                    "btn_new_location",
+                                    "New location",
+                                    class_="btn td-btn-secondary",
+                                ),
                                 class_="td-action-row td-actions-end",
                             ),
                             col_widths=(4, 4, 4),
@@ -227,6 +278,18 @@ app_ui = ui.page_fillable(
                     class_="td-dining-places-row",
                 ),
                 class_="td-shell",
+            ),
+            ui.div(
+                ui.output_ui("chat_area_ui"),
+                id="td-chat-widget",
+                class_="td-chat-widget",
+            ),
+            ui.tags.button(
+                ui.span("Food guide", class_="td-chat-fab-label"),
+                type="button",
+                id="td-chat-fab",
+                class_="td-chat-fab",
+                **{"aria-label": "Open Food guide chat"},
             ),
             class_="td-page-inner",
         ),
