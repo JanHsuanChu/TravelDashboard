@@ -126,15 +126,56 @@ _CHAT_WIDGET_JS = ui.tags.script(
     """
     (function() {
       function qs(sel){ return document.querySelector(sel); }
+      function qsa(sel){ return document.querySelectorAll(sel); }
+      function scrollChatToBottom(){
+        var box = qs('#td-chat-widget .td-chat-messages');
+        if (!box) return;
+        box.scrollTop = box.scrollHeight;
+      }
+      function scheduleScrollBurst(){
+        var delays = [0, 40, 120, 260, 420];
+        for (var i = 0; i < delays.length; i++) {
+          (function(d){ setTimeout(scrollChatToBottom, d); })(delays[i]);
+        }
+      }
       function openWidget(){
         var el = qs('#td-chat-widget');
         if (!el) return;
         el.classList.add('td-chat-widget-open');
+        scheduleScrollBurst();
       }
       function closeWidget(){
         var el = qs('#td-chat-widget');
         if (!el) return;
         el.classList.remove('td-chat-widget-open');
+      }
+      var chatObserver = null;
+      var rootObserver = null;
+      function ensureChatObserver(){
+        var root = qs('#td-chat-widget');
+        if (!root || !window.MutationObserver) return;
+        if (chatObserver) { try { chatObserver.disconnect(); } catch(e) {} chatObserver = null; }
+        chatObserver = new MutationObserver(function(muts){
+          for (var i = 0; i < muts.length; i++) {
+            var m = muts[i];
+            if (m.type === 'childList') {
+              var t = m.target;
+              if (t && (t.classList && t.classList.contains('td-chat-messages') || (t.closest && t.closest('.td-chat-messages')))) {
+                scheduleScrollBurst();
+                break;
+              }
+            }
+          }
+        });
+        chatObserver.observe(root, { childList: true, subtree: true });
+      }
+      function ensureRootObserver(){
+        if (rootObserver || !window.MutationObserver) return;
+        rootObserver = new MutationObserver(function(){
+          ensureChatObserver();
+          scheduleScrollBurst();
+        });
+        rootObserver.observe(document.body, { childList: true, subtree: true });
       }
       document.addEventListener('click', function(ev){
         var t = ev.target;
@@ -148,7 +189,14 @@ _CHAT_WIDGET_JS = ui.tags.script(
           return;
         }
         if (t.closest('#btn_generate')) { setTimeout(openWidget, 50); return; }
+        if (t.closest('#btn_agent_send') || t.closest('[data-td-agent-chip]')) {
+          scheduleScrollBurst();
+          return;
+        }
       });
+      document.addEventListener('shiny:value', function(){ ensureChatObserver(); scheduleScrollBurst(); });
+      document.addEventListener('shiny:connected', function(){ ensureRootObserver(); ensureChatObserver(); scheduleScrollBurst(); });
+      window.addEventListener('load', function(){ ensureRootObserver(); ensureChatObserver(); scheduleScrollBurst(); });
     })();
     """
 )
@@ -283,6 +331,11 @@ app_ui = ui.page_fillable(
                 ui.output_ui("chat_area_ui"),
                 id="td-chat-widget",
                 class_="td-chat-widget",
+            ),
+            ui.div(
+                ui.output_ui("qc_widget_ui"),
+                id="td-qc-widget-root",
+                class_="td-qc-widget-root",
             ),
             ui.tags.button(
                 ui.span("Food guide", class_="td-chat-fab-label"),

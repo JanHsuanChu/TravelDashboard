@@ -247,6 +247,19 @@ def _default_plan() -> dict:
                 {"label": "Compare 2", "score": 0},
             ],
         },
+        "_meta": {
+            "agent4_qc": {
+                "initial_scores": {"location_likert": None, "dietary_likert": None},
+                "final_scores": {"location_likert": None, "dietary_likert": None},
+                "validation_results": {"location_correct": None, "dietary_correct": None},
+                "error_rates": {"location": None, "dietary": None},
+                "turns_used": 0,
+                "max_turns": 3,
+                "all_five": False,
+                "detail": "",
+                "qc_log_path": "",
+            }
+        },
     }
 
 
@@ -534,8 +547,9 @@ def server(input, output, session):
     chat_assistant_turns = reactive.Value(0)
     quick_replies_state = reactive.Value([])  # list[dict{label,message}]
     status_panel_open = reactive.Value(True)
-    status_drawer_open = reactive.Value(False)
+    qc_widget_open = reactive.Value(False)
     saved_pref_notice = reactive.Value("")  # one-line last notice for UI
+    initial_food_state = reactive.Value(None)  # snapshot of food prefs from initial Generate
 
     def _append_chat(role: str, content: str, *, includes_recs: bool = False) -> None:
         rows = list(chat_messages() or [])
@@ -543,6 +557,58 @@ def server(input, output, session):
         chat_messages.set(rows)
         if role == "assistant":
             chat_assistant_turns.set(int(chat_assistant_turns() or 0) + 1)
+
+    def _is_new_area_refinement(msg: str) -> bool:
+        m = (msg or "").strip().lower()
+        if not m:
+            return False
+        cues = (
+            "another district",
+            "different district",
+            "another area",
+            "different area",
+            "another location",
+            "different location",
+            "somewhere else",
+            "elsewhere",
+        )
+        return any(c in m for c in cues)
+
+    def _requested_outside_guardrail_location(msg: str, *, ctx: dict) -> str | None:
+        """
+        Detect likely destination override requests in chat refinements.
+        Returns a short location phrase if user asks for a different location
+        than the current destination guardrail; otherwise None.
+        """
+        m = " ".join((msg or "").strip().lower().split())
+        if not m:
+            return None
+        dest = (ctx.get("destination") or {}) if isinstance(ctx.get("destination"), dict) else {}
+        cur_city = str(dest.get("city") or "").strip().lower()
+        cur_country = str(dest.get("country") or "").strip().lower()
+        # Look for common "in X" style requests.
+        mm = re.search(r"\b(?:in|at|around|near)\s+([a-z][a-z\.\-\s]{1,60})", m)
+        if not mm:
+            return None
+        raw = " ".join(mm.group(1).strip().split())
+        stop_tokens = {"for", "with", "that", "which", "where", "and", "but", "please", "instead"}
+        parts = raw.split()
+        cut = len(parts)
+        for i, p in enumerate(parts):
+            if p in stop_tokens:
+                cut = i
+                break
+        req = " ".join(parts[:cut]).strip(" ,.")
+        if len(req) < 3:
+            return None
+        if cur_city and cur_city in req:
+            return None
+        if cur_country and cur_country in req:
+            return None
+        # Stronger signals that this is a destination change intent.
+        if any(k in m for k in ("recommendations in ", "restaurants in ", "find me in ", "in ")):
+            return req
+        return None
 
     def _tag_label_map(d: dict[str, str], slugs: list[str]) -> list[str]:
         out = []
@@ -1037,6 +1103,7 @@ def server(input, output, session):
                     "dietary_restrictions_text": input.dietary_restrictions_text(),
                 }
             )
+            initial_food_state.set(dict(ctx.get("food") or {}))
 
             dest_label = ", ".join(
                 p
@@ -1133,8 +1200,13 @@ def server(input, output, session):
                     map_places_state.set(_markers_from_candidates(agent1_candidates))
                     ui.update_text("map_place_pick", value="0", session=session)
                     agent_pending_question.set("")
+                    qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
+                    fs = (qc_meta.get("final_scores") or {}) if isinstance(qc_meta, dict) else {}
+                    loc_s = fs.get("location_likert")
+                    diet_s = fs.get("dietary_likert")
+                    qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
                     agent_status_msg.set(
-                        f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}"
+                        f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
                     )
                     food_collapsed.set(True)
                     _append_chat("assistant", _opening_message(ctx, parsed), includes_recs=True)
@@ -1339,6 +1411,22 @@ def server(input, output, session):
                     "dietary_restrictions_text": input.dietary_restrictions_text(),
                 }
             )
+            # Refinements should behave like fresh requests but keep the original food profile
+            # captured at initial Generate for consistency across turns.
+            base_food = initial_food_state()
+            if isinstance(base_food, dict) and base_food:
+                merged_ctx = dict(ctx)
+                merged_ctx["food"] = dict(base_food)
+                ctx = merged_ctx
+            outside_loc = _requested_outside_guardrail_location(msg, ctx=ctx)
+            if outside_loc:
+                guard_msg = (
+                    f"I can’t switch to **{outside_loc}** from chat because location is a guardrail for this run. "
+                    "Please update the destination fields in the form and click **Generate recommendations** again."
+                )
+                agent_status_msg.set("Guardrail: refinement requested location outside current destination.")
+                _append_chat("assistant", guard_msg, includes_recs=False)
+                return
             dest_label = ", ".join(
                 p
                 for p in (
@@ -1350,15 +1438,26 @@ def server(input, output, session):
             trip_food_narrative = preference_narrative_from_trip_food(ctx["food"])
             pref_narrative = trip_food_narrative
             budgets = LoopBudgets(min_llm_turns=2, max_llm_turns=6, max_retrieval_reruns=6)
+            exclude_titles: list[str] = []
+            area_refresh_requested = _is_new_area_refinement(msg)
+            if area_refresh_requested:
+                current_places = (((plan_state() or {}).get("dining") or {}).get("places") or [])
+                exclude_titles = [
+                    str(p.get("title") or "").strip()
+                    for p in current_places
+                    if isinstance(p, dict) and str(p.get("title") or "").strip()
+                ]
             res = run_orchestrator_loop(
                 ctx=ctx,
                 architecture_md=arch,
                 destination_label=dest_label or (input.dest_country() or "").strip(),
                 preference_narrative=pref_narrative,
                 budgets=budgets,
-                session_id=sid,
+                # Fresh request behavior for each refinement (no prior-turn carry-over).
                 user_message=msg,
+                excluded_place_titles=exclude_titles,
             )
+            agent_session_id.set(res.session_id)
             if res.status == "needs_clarification":
                 agent_pending_question.set(res.question or "")
                 agent_status_msg.set("Waiting for your answer.")
@@ -1379,9 +1478,15 @@ def server(input, output, session):
             map_places_state.set(_markers_from_candidates(agent1_candidates))
             ui.update_text("map_place_pick", value="0", session=session)
             agent_pending_question.set("")
-            agent_status_msg.set(
-                f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}"
-            )
+            qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
+            fs = (qc_meta.get("final_scores") or {}) if isinstance(qc_meta, dict) else {}
+            loc_s = fs.get("location_likert")
+            diet_s = fs.get("dietary_likert")
+            qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
+            status_msg = f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
+            if area_refresh_requested and exclude_titles:
+                status_msg += " | Trying a different area and avoiding previous picks."
+            agent_status_msg.set(status_msg)
             new_titles = [str(p.get("title") or "").strip() for p in (((parsed.get("dining") or {}).get("places")) or [])[:3] if isinstance(p, dict)]
             m = msg.lower()
             intent_refresh = any(x in m for x in ("dessert", "sweet", "cheaper", "budget", "different area", "another area", "near", "close to", "more like"))
@@ -1561,29 +1666,25 @@ def server(input, output, session):
 
             bubbles.append(ui.div(ui.div(content, extra, class_=bubble_cls), class_=row_cls))
 
-        drawer_open = bool(status_drawer_open())
-        drawer_toggle = "▾" if drawer_open else "▸"
-        drawer = ui.div(
-            ui.div(
-                ui.span("Agent status", class_="td-status-drawer-title"),
-                ui.input_action_button(
-                    "btn_toggle_status_drawer",
-                    drawer_toggle,
-                    class_="btn td-btn-secondary td-status-drawer-toggle",
-                ),
-                class_="td-status-drawer-header",
-            ),
-            ui.div(
-                ui.output_ui("agent_status_panel_ui") if drawer_open else ui.div(),
-                class_="td-status-drawer-body",
-            ),
-            class_="td-status-drawer",
-        )
-
         return ui.div(
             header,
             context_bar,
-            drawer,
+            ui.div(
+                ui.div(
+                    ui.span("Guardrails", class_="td-status-drawer-title"),
+                    ui.input_action_button(
+                        "btn_toggle_guardrails_drawer",
+                        ("Hide" if bool(status_panel_open()) else "Show"),
+                        class_="btn td-btn-secondary td-status-drawer-toggle",
+                    ),
+                    class_="td-status-drawer-header",
+                ),
+                ui.div(
+                    ui.output_ui("agent_guardrails_ui") if bool(status_panel_open()) else ui.div(),
+                    class_="td-status-drawer-body",
+                ),
+                class_="td-status-drawer",
+            ),
             ui.div(*bubbles, class_="td-chat-messages"),
             ui.div(
                 ui.input_text("agent_chat_input", None, value="", placeholder="Refine, ask follow-ups, or say 'done'…"),
@@ -1601,13 +1702,15 @@ def server(input, output, session):
             ui.update_text("agent_chat_input", value=msg, session=session)
             # No toast: chips should feel instant and quiet.
 
-    # Drawer replaces the old right-side status panel toggle inside the widget.
-    # Keep status_panel_open reactive value for backwards compatibility (unused by widget).
+    @reactive.effect
+    @reactive.event(input.btn_toggle_qc_widget)
+    def _toggle_qc_widget():
+        qc_widget_open.set(not qc_widget_open())
 
     @reactive.effect
-    @reactive.event(input.btn_toggle_status_drawer)
-    def _toggle_status_drawer():
-        status_drawer_open.set(not status_drawer_open())
+    @reactive.event(input.btn_toggle_guardrails_drawer)
+    def _toggle_guardrails_drawer():
+        status_panel_open.set(not bool(status_panel_open()))
 
     @reactive.effect
     @reactive.event(input.btn_new_location)
@@ -1624,6 +1727,7 @@ def server(input, output, session):
         agent_status_msg.set("")
         agent_pending_question.set("")
         saved_pref_notice.set("")
+        initial_food_state.set(None)
         ui.notification_show(ui.span("Pick a new destination, then Generate again."), type="message", duration=6, session=session)
 
     @render.ui
@@ -1742,7 +1846,211 @@ def server(input, output, session):
             ui.div(f"Turns remaining: {max(0, 6 - int(chat_assistant_turns() or 0))}", class_="td-agent-status-row"),
             class_="td-agent-status-card",
         )
-        return ui.div(guard, prefs, conv, ui.output_ui("agent_status_box"), class_="td-agent-status-body")
+        qc = (((plan_state() or {}).get("_meta") or {}).get("agent4_qc") or {})
+        if not isinstance(qc, dict):
+            qc = {}
+        meta = ((plan_state() or {}).get("_meta") or {})
+        if not isinstance(meta, dict):
+            meta = {}
+        ini = qc.get("initial_scores") or {}
+        fin = qc.get("final_scores") or {}
+        val = qc.get("validation_results") or {}
+        err = qc.get("error_rates") or {}
+        qc_detail = str(qc.get("detail") or "").strip()
+        try:
+            elapsed_ms = int(meta.get("elapsed_ms") or 0)
+        except Exception:
+            elapsed_ms = 0
+        try:
+            llm_turns = int(meta.get("llm_turns_used") or 0)
+        except Exception:
+            llm_turns = 0
+        latency_label = "—"
+        if elapsed_ms > 0:
+            if llm_turns > 0:
+                latency_label = f"{elapsed_ms} ms total (~{round(elapsed_ms / max(1, llm_turns))} ms / LLM turn)"
+            else:
+                latency_label = f"{elapsed_ms} ms total"
+        qc_card = ui.div(
+            ui.div("QC Evidence", class_="td-agent-status-title"),
+            ui.div(
+                ui.span("Before -> After", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"Location {ini.get('location_likert', '—')} -> {fin.get('location_likert', '—')}; "
+                    f"Dietary {ini.get('dietary_likert', '—')} -> {fin.get('dietary_likert', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Validation", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={val.get('location_correct', '—')} | dietary={val.get('dietary_correct', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Error rates", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={err.get('location', '—')} | dietary={err.get('dietary', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC loop", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"{qc.get('turns_used', 0)}/{qc.get('max_turns', 3)} turns | all_5={qc.get('all_five', False)}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Latency", class_="td-agent-status-row-label"),
+                ui.span(latency_label, class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC detail", class_="td-agent-status-row-label"),
+                ui.span(qc_detail or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            class_="td-agent-status-card",
+        )
+        return ui.div(
+            guard,
+            prefs,
+            qc_card,
+            conv,
+            ui.output_ui("agent_status_box"),
+            class_="td-agent-status-body",
+        )
+
+    @render.ui
+    def agent_guardrails_ui():
+        tags = _context_tags_for_ui()
+        loc_ok = bool(tags.get("location"))
+        diet_list = tags.get("dietary") or []
+        guard_rows = [
+            ui.div(
+                ui.span("✓" if loc_ok else "!", class_="td-agent-check td-agent-check-on" if loc_ok else "td-agent-check td-agent-check-warn"),
+                ui.span("Location filter", class_="td-agent-status-row-label"),
+                ui.span(", ".join(tags.get("location") or []) or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-traffic-row",
+            )
+        ]
+        for d in (diet_list or ["(none)"]):
+            guard_rows.append(
+                ui.div(
+                    ui.span("✓", class_="td-agent-check td-agent-check-on"),
+                    ui.span("Dietary", class_="td-agent-status-row-label"),
+                    ui.span(str(d), class_="td-agent-status-row-value"),
+                    class_="td-agent-status-traffic-row",
+                )
+            )
+        return ui.div(
+            ui.div(
+                ui.div("Guardrails (blockers)", class_="td-agent-status-title"),
+                *guard_rows,
+                class_="td-agent-status-card",
+            ),
+            class_="td-agent-status-body",
+        )
+
+    @render.ui
+    def qc_widget_ui():
+        qc = (((plan_state() or {}).get("_meta") or {}).get("agent4_qc") or {})
+        if not isinstance(qc, dict):
+            qc = {}
+        meta = ((plan_state() or {}).get("_meta") or {})
+        if not isinstance(meta, dict):
+            meta = {}
+        ini = qc.get("initial_scores") or {}
+        fin = qc.get("final_scores") or {}
+        val = qc.get("validation_results") or {}
+        err = qc.get("error_rates") or {}
+        qc_detail = str(qc.get("detail") or "").strip()
+        try:
+            elapsed_ms = int(meta.get("elapsed_ms") or 0)
+        except Exception:
+            elapsed_ms = 0
+        try:
+            llm_turns = int(meta.get("llm_turns_used") or 0)
+        except Exception:
+            llm_turns = 0
+        latency_label = "—"
+        if elapsed_ms > 0:
+            if llm_turns > 0:
+                latency_label = f"{elapsed_ms} ms total (~{round(elapsed_ms / max(1, llm_turns))} ms / LLM turn)"
+            else:
+                latency_label = f"{elapsed_ms} ms total"
+        qc_card = ui.div(
+            ui.div("QC Evidence", class_="td-agent-status-title"),
+            ui.div(
+                ui.span("Before -> After", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"Location {ini.get('location_likert', '—')} -> {fin.get('location_likert', '—')}; "
+                    f"Dietary {ini.get('dietary_likert', '—')} -> {fin.get('dietary_likert', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Validation", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={val.get('location_correct', '—')} | dietary={val.get('dietary_correct', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Error rates", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={err.get('location', '—')} | dietary={err.get('dietary', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC loop", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"{qc.get('turns_used', 0)}/{qc.get('max_turns', 3)} turns | all_5={qc.get('all_five', False)}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Latency", class_="td-agent-status-row-label"),
+                ui.span(latency_label, class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC detail", class_="td-agent-status-row-label"),
+                ui.span(qc_detail or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            class_="td-agent-status-card",
+        )
+
+        is_open = bool(qc_widget_open())
+        toggle_label = "Hide" if is_open else "Show"
+        return ui.div(
+            ui.div(
+                ui.span("QC Evidence", class_="td-status-drawer-title"),
+                ui.input_action_button(
+                    "btn_toggle_qc_widget",
+                    toggle_label,
+                    class_="btn td-btn-secondary td-status-drawer-toggle",
+                ),
+                class_="td-status-drawer-header",
+            ),
+            ui.div(
+                ui.div(qc_card, class_="td-agent-status-body") if is_open else ui.div(),
+                class_="td-status-drawer-body",
+            ),
+            class_="td-qc-widget" + (" td-qc-widget-open" if is_open else ""),
+        )
 
     @render.ui
     def out_friendliness():

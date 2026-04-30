@@ -1,10 +1,10 @@
-name: Sync README from architecture doc
+name: Sync README from architecture v3 doc
 
 on:
   push:
     branches: [main]
     paths:
-      - "docs/architecture.md"
+      - "docs/architecture_v3.md"
       - "README.template.md"
       - "scripts/build_readme.py"
       - ".github/workflows/sync-readme.yml"
@@ -35,6 +35,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "README.md already up to date."
           else
-            git commit -m "chore: sync README from docs/architecture.md"
+            git commit -m "chore: sync README from docs/architecture_v3.md"
             git push
           fi

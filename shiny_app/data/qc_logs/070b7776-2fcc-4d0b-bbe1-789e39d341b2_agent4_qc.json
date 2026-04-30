@@ -1,0 +1,74 @@
+{
+  "session_id": "070b7776-2fcc-4d0b-bbe1-789e39d341b2",
+  "turns": [
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No errors detected; 4/5 location score reflects good contextual relevance; 5/5 dietary score for perfect vegetarian and kosher compliance. RAG match moderate (0.5663).",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5663,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.566"
+      },
+      "agent2_compact_summary": "places=A Bowl of Noodles, Funky Noodles, Lanzhou Lamian Noodle Bar, Noodle & Beer, Hawksmoor Air Street; dishes=Mushroom & Tofu Ramen (Vegetarian Kosher), Cold Sesame Noodle Salad (Vegetarian Kosher), Spicy Tofu Lo Mein (Vegetarian Kosher), Vegetable Chow Mein (Vegetarian Kosher)",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All 5 recommended spots are in London and satisfy vegetarian & kosher criteria.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5663,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.566"
+      },
+      "agent2_compact_summary": "places=A Bowl of Noodles, Funky Noodles, Lanzhou Lamian Noodle Bar, Noodle & Beer, Hawksmoor Air Street; dishes=Mushroom & Tofu Ramen (Vegetarian Kosher), Cold Sesame Noodle Salad (Vegetarian Kosher), Spicy Tofu Lo Mein (Vegetarian Kosher), Vegetable Chow Mein (Vegetarian Kosher)",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All listed venues are real London spots offering vegetarian and kosher dishes. Pick your favorites: from ramen to lo mein, satisfying dietary needs with accurate dish names and cuisines. Enjoy your trip!",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5663,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.566"
+      },
+      "agent2_compact_summary": "places=A Bowl of Noodles, Funky Noodles, Lanzhou Lamian Noodle Bar, Noodle & Beer, Hawksmoor Air Street; dishes=Mushroom & Tofu Ramen (Vegetarian Kosher), Cold Sesame Noodle Salad (Vegetarian Kosher), Spicy Tofu Lo Mein (Vegetarian Kosher), Vegetable Chow Mein (Vegetarian Kosher)",
+      "qc_turn": 3
+    }
+  ]
+}

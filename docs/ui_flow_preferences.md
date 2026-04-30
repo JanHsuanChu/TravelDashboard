@@ -94,6 +94,16 @@ These lines are part of the experience, not small print:
 
 On first visit in a browser, the app stores a **random id** locally (`localStorage`) as a **secondary signal** for **future** features (for example, a “continue as …?” style prompt). **Today it does not change** save, load, or preload behavior; **email remains the primary identity** for preferences.
 
+Implementation note (current app): this device id is pushed to a hidden Shiny input (`device_id`) on connect so future flows can use it without changing the visible form behavior.
+
+---
+
+## Additional current behavior (implemented)
+
+- **Generate collapses food inputs to a summary** with an "Edit food preferences" action; this helps keep the plan card compact after recommendations appear.
+- **New location** clears destination fields and chat/session state, but keeps saved profile preferences available for reuse.
+- **Returning user preload trigger** uses both debounce (~500 ms after typing stops) and blur, matching the timing expectations above.
+
 ---
 
 ## Autofill and form behavior (Safari, Chrome, etc.)

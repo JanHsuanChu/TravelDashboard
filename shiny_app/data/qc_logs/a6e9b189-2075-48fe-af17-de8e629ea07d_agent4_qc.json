@@ -1,0 +1,27 @@
+{
+  "session_id": "a6e9b189-2075-48fe-af17-de8e629ea07d",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/5 errors",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "details": "location=0/5 errors; dietary=0/5 errors"
+      },
+      "agent2_compact_summary": "places=City O' City, SubCulture, Modern Market Eatery - Champa, STK Steakhouse, Kealoha's BBQ; dishes=Kale & Quinoa Bowl, Vegan Portobello Club Sandwich, Tofu Power Bowl, Grilled Asparagus with Lemon, Jackfruit BBQ Tacos",
+      "qc_turn": 1
+    }
+  ]
+}

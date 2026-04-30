@@ -1,0 +1,28 @@
+{
+  "session_id": "50ee3e35-71b3-414c-9113-a112ffb4b0a9",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.589",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.589,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.589"
+      },
+      "agent2_compact_summary": "places=FishWorks, Fish! Borough Market Restaurant, The Sea, The Sea, The Oystermen Seafood Bar & Kitchen, Parsons; dishes=Bouillabaisse at FishWorks, Fish and chips at Fish! Borough Market Restaurant, Seared sea scallops at The Sea, The Sea, Oyster platter at The Oystermen Seafoo",
+      "qc_turn": 1
+    }
+  ]
+}

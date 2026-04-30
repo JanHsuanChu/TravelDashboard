@@ -1,0 +1,74 @@
+{
+  "session_id": "6f23b882-cb18-42e3-b685-fad39d7abcd1",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agrees: seafood spots correctly named, no caffeine items listed, all aspects align with the request.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5481,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.548"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Six Seven Restaurant, RockCreek Seafood & Spirits, The Capital Grille; dishes=Grilled Halibut with Citrus Beurre Blanc, Dungeness Crab Cakes, Steamed Mussels in White Wine Broth, Geoduck Sashimi Platter",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.549",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5491,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.549"
+      },
+      "agent2_compact_summary": "places=The Fisherman's Restaurant Seattle, Seattle Fish Company, Six Seven Restaurant, RockCreek Seafood & Spirits, The Capital Grille; dishes=Grilled Halibut with Lemon Butter, Steamed Mussels in White Wine Broth, Crab Stuffed Mushroom, Pacific Northwest Chowder",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.547",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5468,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.547"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, RockCreek Seafood & Spirits, Six Seven Restaurant, The Capital Grille; dishes=Fish and Chips, Clam Chowder, Grilled Halibut, Salmon Plate",
+      "qc_turn": 3
+    }
+  ]
+}

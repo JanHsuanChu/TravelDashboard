@@ -1,0 +1,74 @@
+{
+  "session_id": "d802a2cc-0f32-46e1-816b-a4cd09093291",
+  "turns": [
+    {
+      "location_likert": 4,
+      "dietary_likert": 3,
+      "location_correct": true,
+      "dietary_correct": false,
+      "details": "London locations cited, but fish‑heavy venues conflict with vegan/gluten‑free requirement, rendering dietary suggestions unreliable. Attribution errors noted.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 4,
+        "avg_rag_match_score": 0.5794,
+        "details": "location=0/5 errors; dietary=0/4 errors; matched_rag_avg=0.579"
+      },
+      "agent2_compact_summary": "places=Fish! Borough Market Restaurant, Hawksmoor Air Street, Fishoria Fish and Chips, Hobson`s Fish & Chips soho, North Sea Fish Restaurant; dishes=Quinoa tabbouleh with lemon and herbs, Grilled marinated tofu skewers with roasted vegetables, Mushroom and lentil shepherd's pie w",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 provided accurate London locations and vegan gluten‑free options; minor omissions noted.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5871,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.587"
+      },
+      "agent2_compact_summary": "places=Fish! Borough Market Restaurant, Hawksmoor Air Street, Fishoria Fish and Chips, Hobson`s Fish & Chips soho, FishWorks; dishes=Quinoa tabbouleh with lemon and herbs, Grilled marinated tofu skewers, Mushroom and lentil shepherd's pie with gluten‑free topping, Apple crumble w",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All location entries correct; dietary tags satisfied, 5/5. Likert aligned with deterministic QC.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5888,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.589"
+      },
+      "agent2_compact_summary": "places=Fish! Borough Market Restaurant, Hawksmoor Air Street, Fishoria Fish and Chips, Hobson`s Fish & Chips soho, FishWorks; dishes=Quinoa tabbouleh with lemon and herbs, Grilled marinated tofu skewers, Mushroom and lentil shepherd's pie with gluten‑free topping, Apple crumble w",
+      "qc_turn": 3
+    }
+  ]
+}

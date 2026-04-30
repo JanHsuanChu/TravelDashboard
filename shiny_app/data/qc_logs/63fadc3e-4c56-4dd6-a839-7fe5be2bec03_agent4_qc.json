@@ -1,0 +1,74 @@
+{
+  "session_id": "63fadc3e-4c56-4dd6-a839-7fe5be2bec03",
+  "turns": [
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All facts correct, slight wording variation.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.6011,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.601"
+      },
+      "agent2_compact_summary": "places=My Cup Noodles Factory, Osaka Buyu-Den Halal & Vegan Wagyu Ramen Higashi-Umeda Osaka, Human Beings Everybody Noodles, Japanese Omakase Restaurant YOSAKURA, fried rice and noodles; dishes=Halal Vegan Wagyu Ramen, Vegetarian Ramen, Cold Soba with Light Soy Drizzle, Homemade ",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.601",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.6011,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.601"
+      },
+      "agent2_compact_summary": "places=My Cup Noodles Factory, Osaka Buyu-Den Halal & Vegan Wagyu Ramen Higashi-Umeda Osaka, Human Beings Everybody Noodles, Japanese Omakase Restaurant YOSAKURA, fried rice and noodles; dishes=Halal Vegan Wagyu Ramen, Vegetarian Ramen, Cold Soba with Light Soy Drizzle, Homemade ",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 4,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.601",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.6011,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.601"
+      },
+      "agent2_compact_summary": "places=My Cup Noodles Factory, Osaka Buyu-Den Halal & Vegan Wagyu Ramen Higashi-Umeda Osaka, Human Beings Everybody Noodles, Japanese Omakase Restaurant YOSAKURA, fried rice and noodles; dishes=Halal Vegan Wagyu Ramen, Vegetarian Ramen, Cold Soba with Light Soy Drizzle, Homemade ",
+      "qc_turn": 3
+    }
+  ]
+}

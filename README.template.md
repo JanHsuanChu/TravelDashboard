@@ -37,12 +37,15 @@ git push -u origin main
 
 ### Description
 
-**What it does:** The Travel Dashboard is a **Shiny for Python** browser app where users enter a destination, optional compare locations, season or month, and detailed **food preferences** (preset tags plus short free text, including **dietary restrictions** that the model must honor). Users can **save** preferences to the database and **generate** a structured plan:
+**What it does:** The Travel Dashboard is a **Shiny for Python** browser app where users enter a destination, optional compare locations, season or month, and detailed **food preferences** (preset tags plus short free text, including **dietary restrictions** that recommendations must honor). Users can **save** preferences to the database, **generate** recommendations, and refine results through an in-app assistant:
 
 - **Dining — dishes** — LLM-suggested dishes with a **price tier** badge only: **`$`**, **`$$`**, or **`$$$`** (budget / mid-range / upscale–style; inferred, not live menu prices).
 - **Dining — recommended places** — When **Google Places** is configured, the app runs **Agent 1**: real restaurants from **Text Search**, ranked with **embedding similarity** (sentence-transformers) to the user’s preferences, then **Agent 2** (Ollama) writes place notes using that list. Each place shows **retrieval match %** (from RAG scores) and **Google price level** as **`$` / `$$` / `$$$`** when the API returns it. A **Google Map** (Embed API) shows the selected venue.
 - **Essential info** — **Travel advisory** uses live U.S. State Department table data plus a short **auxiliary-model** summary; **weather** still comes from the **Agent 2** plan JSON (illustrative unless you add a live feed).
 - **Travel friendliness** — **World Bank**–based scores and HTML report shell in [`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/); numeric scores are **not** from the LLM. Optional **auxiliary-model** prose fills report Purpose/Recommendations when enabled.
+- **Food Guide (chat refinement assistant)** — A floating chat widget opens after Generate and helps users refine dining picks without re-entering form data. It uses form context (location, dietary, likes/dislikes), supports quick-reply chips, and can refresh recommendations in bounded turns.
+- **Guardrails (hard safety constraints)** — Server-side validation enforces destination and dietary constraints before recommendations are accepted. If a result violates guardrails, the orchestrator repairs/retries instead of showing non-compliant output.
+- **QC Evidence (quality transparency panel)** — A user-visible panel summarizes QC Agent checks (initial/final scores, validation results, error rates, QC turns, latency). It is evidence from the same orchestrator run, not a separate recommendation flow.
 
 Without a Places API key, dining places are generic LLM suggestions and the map stays empty; dishes and friendliness still work.
 
@@ -63,6 +66,9 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 |------------|--------|--------|
 | **Preference storage** | Implemented | Food likes/dislikes/dietary tags and text; segment users via `food_tags` JSONB. |
 | **Generate recommendations** | Implemented | **Agent 2** Ollama call for plan JSON (parallel with advisory table fetch); optional **auxiliary** calls for advisory summary + friendliness report prose; optional Places-backed list for Agent 2. |
+| **Food Guide chat** | Implemented | In-app post-Generate refinement loop with quick replies, context carry-forward from form inputs, and bounded follow-up turns. |
+| **Guardrails (dietary + location)** | Implemented | Blocks non-compliant outputs and triggers orchestrator repair/retry so users only see destination- and dietary-safe recommendations. |
+| **QC Evidence** | Implemented | Exposes QC Agent metrics (scores, validation, error rates, turns, latency) so users can inspect recommendation quality signals. |
 | **Architecture context in the prompt** | Implemented | `docs/architecture.md` is injected into the system message. |
 | **Agent 1 — Places + embedding RAG** | Implemented (optional) | Live restaurant candidates, semantic ranking, preference-aware search queries; details include `priceLevel` and review snippets for the LLM. |
 | **Agent 2 — Dining copy** | Implemented | Structured dishes (`$`/`$$`/`$$$`) and places aligned to Agent 1 names when available. |
@@ -74,7 +80,7 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 
 ### Process diagram and architecture reference
 
-The content below is **generated** from [`docs/architecture.md`](docs/architecture.md). It includes the **target** pipeline (agents, RAG, tools) and a **current** Shiny data-flow diagram. Edit that file, then run `python3 scripts/build_readme.py` to refresh `README.md`. CI also regenerates `README.md` when `docs/architecture.md` or `README.template.md` changes.
+The content below is **generated** from [`docs/architecture_v3.md`](docs/architecture_v3.md). It includes the **target** pipeline (agents, RAG, tools) and implementation mapping. Edit that file, then run `python3 scripts/build_readme.py` to refresh `README.md`. CI also regenerates `README.md` when `docs/architecture_v3.md` or `README.template.md` changes.
 
 {{ARCHITECTURE_BODY}}
 
@@ -85,9 +91,10 @@ The content below is **generated** from [`docs/architecture.md`](docs/architectu
 | Piece | Responsibility |
 |-------|------------------|
 | **UI** ([`shiny_app/ui.py`](shiny_app/ui.py), [`shiny_app/components/`](shiny_app/components/)) | Plan form, outputs grid (dishes, essential, friendliness), full-width dining places + map. |
-| **Server** ([`shiny_app/server.py`](shiny_app/server.py)) | **Save** → Supabase user + preference; debounced-email preload; **Generate** → optional `TD_DISABLE_TRAVEL_FRIENDLINESS`, friendliness thread + optional save + Agent 1 + Ollama, strip `friendliness` from plan JSON, map markers and embed URL. |
+| **Server** ([`shiny_app/server.py`](shiny_app/server.py)) | **Save** → Supabase user + preference; debounced-email preload; **Generate** and chat refinement → orchestrator loop + guardrails + status/QC widgets, plus friendliness thread, optional auto-save, map markers and embed URL. |
 | **`validators`** ([`shiny_app/validators.py`](shiny_app/validators.py)) | Food text, when-mode (season/month), and email shape checks for Save / Generate. |
 | **`plan_logic`** ([`shiny_app/plan_logic.py`](shiny_app/plan_logic.py)) | `build_trip_context`, user/system JSON instructions (dietary rules, dish `$`/`$$`/`$$$`, place alignment to Agent 1). |
+| **`agent_loop`** ([`shiny_app/agent_loop.py`](shiny_app/agent_loop.py)) | Bounded orchestration: Agent 1 retrieval retries, Agent 2 JSON repair loop, hard guardrail validation, and QC Agent evidence loop. |
 | **`restaurant_rag`** ([`shiny_app/restaurant_rag.py`](shiny_app/restaurant_rag.py)) | Preference narrative → Places search (generic + food-hint query), embed query and place blurbs, cosine rank, Place Details, `price_tier` + `rag_match_score` on candidates. |
 | **`google_places_client`** ([`shiny_app/google_places_client.py`](shiny_app/google_places_client.py)) | Places API (New): `searchText`, GET Place Details, field masks. |
 | **`context`** ([`shiny_app/context.py`](shiny_app/context.py)) | Reads repo-root [`docs/architecture.md`](docs/architecture.md) for the plan LLM when the server uses full architecture context (bypassed when `TD_LIGHT_ARCH_CONTEXT` supplies a short stub). |
@@ -95,7 +102,7 @@ The content below is **generated** from [`docs/architecture.md`](docs/architectu
 | **`ollama_client`** ([`shiny_app/ollama_client.py`](shiny_app/ollama_client.py)) | Ollama Cloud chat + JSON extraction. |
 | **`travel_friendliness`** ([`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/)) | World Bank fetch, scoring, HTML report. |
 
-**Workflow (high level):** On **Generate**, **travel friendliness** is submitted on a **background thread** (unless `TD_DISABLE_TRAVEL_FRIENDLINESS`) while the server may auto-save prefs, run **Agent 1** (if `GOOGLE_PLACES_API_KEY`), and call **Ollama** for the plan JSON. The handler waits for both the LLM response and the friendliness future before updating the UI. If the Places key is set, **Agent 2** receives `agent1_restaurants`. The UI merges place rows with coordinates, shows **% match · $tier** when available, and embeds the map. System context is **full `docs/architecture.md`** or a **short stub** when `TD_LIGHT_ARCH_CONTEXT` is set.
+**Workflow (high level):** On **Generate**, **travel friendliness** is submitted on a **background thread** (unless `TD_DISABLE_TRAVEL_FRIENDLINESS`) while the server may auto-save prefs, run **Agent 1** (if `GOOGLE_PLACES_API_KEY`), and run the **orchestrator loop** (`agent_loop.py`) for Agent 2 JSON generation + guardrail repair + QC Agent turns. The handler waits for both orchestrator output and the friendliness future before updating the UI. If the Places key is set, Agent 2 is grounded with `agent1_restaurants`. The UI merges place rows with coordinates, shows **% match · $tier** when available, and embeds the map. System context is **full `docs/architecture.md`** or a **short stub** when `TD_LIGHT_ARCH_CONTEXT` is set.
 
 #### RAG and tool implementation
 
@@ -144,7 +151,8 @@ Ollama is invoked from a **shared host** (`OLLAMA_HOST`, default `https://ollama
 
 | Tier | Default model | Where it runs | What it does |
 |------|----------------|-----------------|---------------|
-| **Agent 2** | `nemotron-3-nano:30b-cloud` | [`server.py`](shiny_app/server.py) on **Generate** | One `ollama_chat` call returns the **plan JSON** (`dining`, `essential` weather scaffolding, etc.). `friendliness` in that JSON is discarded; scores come from World Bank. |
+| **Agent 2** | `nemotron-3-nano:30b-cloud` | [`agent_loop.py`](shiny_app/agent_loop.py) orchestrated from [`server.py`](shiny_app/server.py) on **Generate** and chat refinement | Multiple `ollama_chat` calls may occur inside the bounded orchestrator loop (draft + repair/self-check turns) to produce compliant **plan JSON** (`dining`, `essential`). `friendliness` in that JSON is discarded; scores come from World Bank. |
+| **QC Agent** | `gpt-oss:20b-cloud` (OTHER tier default) | [`agent_loop.py`](shiny_app/agent_loop.py) inside the orchestrator QC loop | Runs QC scoring/details over Agent 2 outputs. Deterministic checks remain hard evidence; LLM output is used as bounded quality assistance and explanation. |
 | **Auxiliary (“OTHER”)** | `gpt-oss:20b-cloud` | [`us_travel_advisory.py`](shiny_app/us_travel_advisory.py), [`travel_friendliness/pipeline.py`](shiny_app/travel_friendliness/pipeline.py) | (1) **U.S. travel advisory** — after the State Dept row is matched, a short plain-text summary (separate `ollama_chat` with a small `num_predict` cap). (2) **Friendliness HTML report** — optional **Purpose** / **Recommendations** paragraphs; skipped when `TD_FRIENDLINESS_SKIP_REPORT_LLM` is set or when `OLLAMA_API_KEY` is missing. |
 
 **Agent 1** (restaurant retrieval) uses **Google Places** + **sentence-transformers** embeddings only — **no** Ollama. `OLLAMA_MODEL_AGENT1` and `resolved_model_agent1()` are reserved for a future Agent 1 LLM step.
@@ -152,7 +160,7 @@ Ollama is invoked from a **shared host** (`OLLAMA_HOST`, default `https://ollama
 **How env vars map to tiers**
 
 - **Agent 2:** `OLLAMA_MODEL_AGENT2` → else `OLLAMA_MODEL_AGENTS` → else default `nemotron-3-nano:30b-cloud`. **`OLLAMA_MODEL` does not apply** to Agent 2 (so plan and auxiliary defaults stay independent).
-- **Auxiliary:** `OLLAMA_MODEL_OTHER` or `OLLAMA_MODEL_AUXILIARY` → else `OLLAMA_MODEL` → else default `gpt-oss:20b-cloud`.
+- **QC Agent + Auxiliary:** `OLLAMA_MODEL_OTHER` or `OLLAMA_MODEL_AUXILIARY` → else `OLLAMA_MODEL` → else default `gpt-oss:20b-cloud`.
 - **Agent 1 (reserved):** `OLLAMA_MODEL_AGENT1` → else same chain as Agent 2 when a call site uses `resolved_model_agent1()`.
 
 **`OLLAMA_NUM_PREDICT`:** When set, it is applied to `ollama_chat` requests that do not pass an explicit `num_predict` (the main plan call; advisory summary uses its own cap in code).
@@ -226,7 +234,7 @@ Or from repo root (after venv is ready): `./run_shiny.sh`
 
 ## Development
 
-To regenerate the root `README.md` after editing [`README.template.md`](README.template.md) or [`docs/architecture.md`](docs/architecture.md):
+To regenerate the root `README.md` after editing [`README.template.md`](README.template.md) or [`docs/architecture_v3.md`](docs/architecture_v3.md):
 
 ```bash
 python3 scripts/build_readme.py

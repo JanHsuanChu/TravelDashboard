@@ -1,0 +1,74 @@
+{
+  "session_id": "20a1963b-0b27-4dbc-a2a2-db094199e598",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All locations correct, dietary needs met without caffeinated items; thorough match overall, slight room for improvement.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5055,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.505"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, RockCreek Seafood & Spirits, The Crab Pot Seattle; dishes=Steamed Pacific Salmon, Crispy Halibut Fish and Chips, Ahi Tuna Poke Bowl, Creamy Chowder in a Sourdough Bowl, Grilled Halibut with Lemon‑",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.505",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5055,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.505"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, RockCreek Seafood & Spirits, The Crab Pot Seattle; dishes=Steamed Pacific Salmon, Crispy Halibut Fish and Chips, Ahi Tuna Poke Bowl, Creamy Chowder in a Sourdough Bowl, Grilled Halibut with Lemon‑",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Recommend Seattle seafood spots avoiding caffeine. All listed dishes are safe, no caffeinated items.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.506,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.506"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, RockCreek Seafood & Spirits, The Crab Pot Seattle; dishes=Steamed Pacific Salmon, Crispy Halibut Fish and Chips, Ahi Tuna Poke Bowl, Creamy Chowder in a Sourdough Bowl, Grilled Halibut with Lemon‑",
+      "qc_turn": 3
+    }
+  ]
+}

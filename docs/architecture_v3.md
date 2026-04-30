@@ -1,9 +1,9 @@
 This doc is **Architecture V3** for TravelDashboard.
 
-It updates the prior `docs/architecture.md` diagrams/terminology to reflect an **agentic loop Orchestrator** that wraps the existing recommendation components.
+It updates the prior `docs/architecture.md` diagrams/terminology to reflect the implemented **agentic loop Orchestrator** that wraps the existing recommendation components.
 
 Key terminology:
-- **Agentic loop**: a bounded multi-turn controller that can (a) rerun retrieval/rerank, (b) ask the user clarifying questions for quality, (c) enforce hard guardrails, and (d) decide when to stop.
+- **Agentic loop**: a bounded controller that runs Agent 1 + Agent 2 with deterministic validation/repair and a bounded QC loop (QC Agent).
 - **Agent 1**: deterministic restaurant retrieval + embedding ranking (Google Places + local embedding similarity).
 - **Agent 2**: plan LLM that produces the structured JSON used by the UI.
 - **Friendliness pipeline**: mostly deterministic scoring + report generation (may include an optional single LLM call for prose). This is **not** an agentic loop.
@@ -18,7 +18,7 @@ The Orchestrator runs **inside the Shiny app** (same UI) and controls whether to
 - apply hard guardrails (dietary + location) before any recommendation is shown,
 - ask the user a targeted question to improve quality,
 - stop and finalize,
-- store turns + feedback in Supabase to improve future reranking.
+- surface status/QC evidence in chat UI and status widgets.
 
 ```mermaid
 ---
@@ -27,8 +27,8 @@ config:
 ---
 flowchart TB
     Dashboard["Travel Dashboard (UI)\n-Trip + food prefs\n-Chat + feedback"]
-    Supabase[("Supabase\n-users, preferences\n-agent_sessions/turns/feedback/weights")]
-    Orchestrator["Orchestrator (Agentic Loop)\n-Ask/stop policy\n-Retry retrieval/rerank\n-Guardrails\n-Persist memory"]
+    Supabase[("Supabase\n-users + preferences")]
+    Orchestrator["Orchestrator (Agentic Loop)\n-Retry retrieval/rerank\n-Guardrails\n-QC Agent loop\n-Session status"]
 
     RestaurantData["Restaurant data\nGoogle Places API (New)"]
     Agent1["Agent 1 (Deterministic)\nPlaces retrieval + embeddings RAG\nCandidate ranking"]
@@ -54,6 +54,17 @@ flowchart TB
     Agent2 -->|"plan JSON"| Output
     FriendlinessPipe -->|"scores + report"| Output
     Orchestrator -->|"guardrailed + finalized"| Output
+
+    classDef Rose stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
+    style Dashboard fill:#f4d7d7
+    style Supabase fill:#e8e8e8
+    style Orchestrator stroke:#000000,color:#000000,fill:#f4d7d7
+    style RestaurantData fill:#e8e8e8
+    style Agent1 fill:#f4d7d7
+    style Agent2 fill:#f4d7d7
+    style MacroData fill:#e8e8e8
+    style FriendlinessPipe fill:#f4d7d7
+    style Output fill:#f4d7d7
 ```
 
 ---
@@ -64,14 +75,17 @@ flowchart TB
 - **Hard guardrails** (no user feedback required)
   - **Dietary**: do not pass recommendations unless compliant; if uncertain, treat as non-compliant.
   - **Location**: do not pass venues outside the destination.
-- **Quality conversation** (feedback for better recommendations)
-  - Ask 1 targeted question when preferences are underspecified or the user signals dissatisfaction.
-  - Decide whether to **auto-rerun retrieval/rerank** vs **ask the user**.
+- **Quality loop**
+  - Runs Agent 2 in bounded turns and retries on guardrail failures.
+  - Runs QC Agent (up to 3 turns) and feeds QC evidence back to Agent 2 when needed.
+  - Supports clarification state (`needs_clarification`) and chat refinements post-Generate.
 - **Budgets**
   - LLM turns: default **min 2 / max 6**.
-  - Deterministic retrieval reruns per request: cap at **2**.
-- **Memory**
-  - Store session turns + feedback; update lightweight ranking weights for future reranks.
+  - Deterministic retrieval reruns per request: bounded (`LoopBudgets.max_retrieval_reruns`, currently 6 from server calls).
+  - QC Agent turns: max **3**.
+- **Persistence / evidence**
+  - Persists QC evidence logs to `shiny_app/data/qc_logs/`.
+  - Uses Supabase for user/profile preferences; chat session continuity is primarily in reactive state.
 
 ### Agent 1 (existing)
 - Google Places retrieval + Place Details + embedding similarity ranking.
@@ -89,5 +103,5 @@ flowchart TB
 - Agent 1: `shiny_app/restaurant_rag.py` + `shiny_app/google_places_client.py`
 - Agent 2: `shiny_app/plan_logic.py` + `shiny_app/ollama_client.py` (invoked from `shiny_app/server.py`)
 - Friendliness pipeline: `shiny_app/travel_friendliness/` (World Bank scoring + report)
-- Orchestrator (new): `shiny_app/agent_loop.py` (proposed) called from `shiny_app/server.py` Generate handler
+- Orchestrator: `shiny_app/agent_loop.py` called from `shiny_app/server.py` Generate and chat-send handlers
 

@@ -359,6 +359,39 @@ ul.td-country-dd li.td-country-dd-item:hover {
   font-size: 0.9rem;
 }
 
+.td-qc-widget-root {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 79;
+}
+
+.td-qc-widget {
+  width: 420px;
+  border-radius: 12px;
+  border: 1px solid rgba(172, 133, 233, 0.22);
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(45, 27, 78, 0.16);
+  overflow: hidden;
+}
+
+.td-qc-widget .td-status-drawer-header {
+  border-bottom: 1px solid rgba(172, 133, 233, 0.12);
+  background: rgba(246, 244, 251, 0.5);
+}
+
+.td-qc-widget .td-status-drawer-body {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 0.35rem;
+}
+
+.td-qc-widget.td-qc-widget-open .td-status-drawer-body {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0 0.35rem 0.5rem;
+}
+
 @media (max-width: 600px) {
   .td-chat-widget {
     right: 12px;
@@ -369,6 +402,14 @@ ul.td-country-dd li.td-country-dd-item:hover {
   .td-chat-fab {
     right: 12px;
     bottom: 12px;
+  }
+  .td-qc-widget-root {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .td-qc-widget {
+    width: auto;
   }
 }
 
@@ -659,6 +700,31 @@ ul.td-country-dd li.td-country-dd-item:hover {
 .td-agent-dot-on { background: #1d9e75; }
 .td-agent-dot-warn { background: #ef9f27; }
 .td-agent-dot-off { background: #b4b2a9; }
+
+.td-agent-check {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.td-agent-check-on {
+  color: #0f6e55;
+  background: rgba(29, 158, 117, 0.16);
+  border: 1px solid rgba(29, 158, 117, 0.3);
+}
+
+.td-agent-check-warn {
+  color: #8a5a06;
+  background: rgba(239, 159, 39, 0.18);
+  border: 1px solid rgba(239, 159, 39, 0.35);
+}
 
 .td-agent-status-traffic-row,
 .td-agent-status-match-row {

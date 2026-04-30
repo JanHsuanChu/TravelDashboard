@@ -1,0 +1,28 @@
+{
+  "session_id": "dd0e8310-beca-4aa7-93c6-4a7eaed8880a",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 accurately matches London locations and gluten‑free diet. No errors detected. High confidence.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 4,
+        "avg_rag_match_score": 0.5215,
+        "details": "location=0/5 errors; dietary=0/4 errors; matched_rag_avg=0.522"
+      },
+      "agent2_compact_summary": "places=Asian Street Food Hawker, Tabard Street Food Market, Falafel Street food, Korean Street Food, 2017 Authentic Lebanese Street Food; dishes=Lamb Curry with Basmati Rice, Falafel Wrap (served in lettuce wrap, gluten‑free), Korean BBQ Pork Bento (gluten‑free rice side), Authen",
+      "qc_turn": 1
+    }
+  ]
+}

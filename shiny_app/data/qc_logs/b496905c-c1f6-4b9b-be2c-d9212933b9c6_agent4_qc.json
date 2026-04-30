@@ -1,0 +1,28 @@
+{
+  "session_id": "b496905c-c1f6-4b9b-be2c-d9212933b9c6",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.525",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5248,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.525"
+      },
+      "agent2_compact_summary": "places=So Tasty, Lunch On The Plate Bellevue, Taste of Xi'an, The Lakehouse, Din Tai Fung 鼎泰豐; dishes=Gluten-Free Curry Chicken Rice, Crispy Gluten-Free Fried Wontons, Gluten-Free Rice Noodle Stir-Fry, Grilled Teriyaki Tofu Skewers, Mango Sticky Rice (Gluten-Free)",
+      "qc_turn": 1
+    }
+  ]
+}

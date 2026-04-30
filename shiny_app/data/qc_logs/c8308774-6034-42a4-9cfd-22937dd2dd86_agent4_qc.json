@@ -1,0 +1,74 @@
+{
+  "session_id": "c8308774-6034-42a4-9cfd-22937dd2dd86",
+  "turns": [
+    {
+      "location_likert": 3,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All selected venues in London meet location and vegetarian kosher requirements. Chosen restaurants offer vegetarian dishes consistent with dietary tags. No location or dietary errors detected.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 3,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.4691,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.469"
+      },
+      "agent2_compact_summary": "places=Hawksmoor Air Street, Chang's Noodle, The Ritz Restaurant, The Wolseley Piccadilly, Evelyn's Table; dishes=Vegetarian Shepherd’s Pie – lentil and mushroom filling topped with mashed potato, Noodle Soup with seasonal veg – clear broth, wheat noodles, carrots, cabbage, serve",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 3,
+      "dietary_likert": 1,
+      "location_correct": true,
+      "dietary_correct": false,
+      "details": "Location correct, but venues not kosher; vegetarian dish present.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 3,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.4691,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.469"
+      },
+      "agent2_compact_summary": "places=Hawksmoor Air Street, Chang's Noodle, The Ritz Restaurant, The Wolseley Piccadilly, Evelyn's Table; dishes=Vegetarian Shepherd’s Pie – lentil and mushroom filling topped with mashed potato, Noodle Soup with seasonal veg – clear broth, wheat noodles, carrots, cabbage, serve",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 3,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All listed venues are in London, meet vegetarian and kosher requirements. No errors detected.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 3,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.4691,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.469"
+      },
+      "agent2_compact_summary": "places=Hawksmoor Air Street, Chang's Noodle, The Ritz Restaurant, The Wolseley Piccadilly, Evelyn's Table; dishes=Vegetarian Shepherd’s Pie – lentil and mushroom filling topped with mashed potato, Noodle Soup with seasonal veg – clear broth, wheat noodles, carrots, cabbage, serve",
+      "qc_turn": 3
+    }
+  ]
+}

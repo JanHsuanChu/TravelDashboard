@@ -55,7 +55,7 @@ This communicates: “I already know this; you don’t need to repeat it.”
 
 ### Agent Status (collapsible drawer inside widget)
 Agent Status is a user-visible “thinking surface” inside the widget:
-- Collapsible **drawer** (collapsed by default so chat is always reachable)
+- Collapsible **drawer** (open by default; users can hide/show)
 - Guardrails active (blockers)
 - Preference match summary
 - Conversation state (turns used, session)
@@ -64,6 +64,11 @@ Status details:
 - Guardrails show a traffic-light dot per rule (green when armed/passing).
 - Preference items list match percentages (derived from Agent 1 similarity scores when available).
  - Debug/status text (if any) is kept at the bottom of the panel.
+
+### QC Evidence widget (separate UI surface, same loop)
+- The floating **QC Evidence** widget is rendered separately from the chat status drawer, but it shows the **same QC Agent metadata** produced during `run_orchestrator_loop` in `shiny_app/agent_loop.py`.
+- It is a visibility/control surface only (show/hide card); it does **not** run an independent agent or separate orchestration path.
+- Data source: QC metadata under `plan._meta` plus latency/turn metadata attached by the orchestrator and consumed by `shiny_app/server.py`.
 
 ## How it works (high level)
 
@@ -131,30 +136,30 @@ Files:
 ## Ask vs stop policy (quality conversation)
 
 - The agent asks for refinement only to improve recommendation quality (not to add blockers).
-- Stop occurs when:
-  - guardrails pass
-  - the agent has incorporated at least one user reply (min user-facing turns = 2)
-  - the user indicates “done”, or the turn cap is reached
+- Stop/finalize for a generation run occurs when:
+  - hard guardrails pass
+  - Agent 2 reaches its bounded turn policy (minimum self-check + capped retries)
+  - QC Agent loop either reaches both 5/5 scores or hits its max QC turns
+
+For chat refinements after Generate:
+- each send runs a fresh bounded orchestrator pass using the same destination guardrail
+- assistant chat turns are capped at 6 in the UI
+- destination changes from chat are blocked; users must change destination fields and Generate again
 
 ### Interactive chat behavior (after Send)
 After the user sends a message, the assistant produces a short, non-redundant follow-up message (LLM-written). If the Orchestrator needs clarification, the question is shown as an **assistant chat bubble**.
 
-## Supabase persistence (memory for future recommendations)
+## Supabase persistence (current behavior)
 
-The goal of memory is to improve future recommendations with two steps:
+Current persistence used by the app:
 
-1. **Memory preload**: on a future Generate, load `user_reco_weights` and a compact summary of recent sessions/turns.
-2. **Influence ranking**: apply weights as a **soft rerank** over Agent 1 results, and optionally condition Agent 2 with a short “learned preferences” summary.
+1. **Identity + preference preload**: debounced email lookup loads latest saved profile (`app_user` + latest `preference` row).
+2. **Save + Generate auto-save path**: when identity is complete, preferences are written append-only to `preference`.
+3. **Durable chat deltas (limited cases)**: certain chat intents such as “avoid spicy” / “no raw fish” can append a new `preference` snapshot.
 
-Tables (schema file):
-- `TravelDashboard/supabase/agentic_loop_schema.sql`
-  - `agent_sessions`: session continuity
-  - `agent_turns`: conversation history
-  - `agent_feedback`: explicit feedback signals
-  - `user_reco_weights`: learned weights applied to future reranks
-
-Client helpers:
-- `shiny_app/supabase_client.py`: `upsert_agent_session`, `insert_agent_turn`, `insert_agent_feedback`, `fetch_user_reco_weights`, `upsert_user_reco_weights`
+Notes:
+- Agent-session/feedback/weights helper functions exist in `shiny_app/supabase_client.py`, but the current UI loop primarily relies on `app_user` and `preference`.
+- QC loop evidence is persisted to local JSON files under `shiny_app/data/qc_logs/` via `agent_loop.py`.
 
 ## Inline preference learning (visible + trustworthy)
 

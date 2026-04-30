@@ -1,0 +1,74 @@
+{
+  "session_id": "e3b8f219-2c4d-4018-a74b-703afcd8892f",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All checks passed; matches deterministic QC.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.538,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.538"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Guys, The Crab Pot Seattle, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Sockeye Salmon Chowder, Dungeness Crab Cioppino, Grilled Halibut Tacos, Pacific Poke Bowl, Fried Oyster Sandwich",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.538",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5379,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.538"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Guys, The Crab Pot Seattle, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Sockeye Salmon Chowder, Dungeness Crab Cioppino, Grilled Halibut Tacos, Pacific Poke Bowl, Fried Oyster Sandwich",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No location errors; no dietary errors; RAG avg 0.538",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5382,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.538"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Guys, The Crab Pot Seattle, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Sockeyy Salmon Chowder, Dungeness Crab Cioppino, Grilled Halibut Tacos, Pacific Poke Bowl, Fried Oyster Sandwich",
+      "qc_turn": 3
+    }
+  ]
+}

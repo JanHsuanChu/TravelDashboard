@@ -1,0 +1,28 @@
+{
+  "session_id": "e62a8b4d-690f-4fb1-8b97-e2e7b1a93523",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 accurately lists vegetarian-friendly spots in Seattle, matching dietary restrictions with no errors.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 4,
+        "avg_rag_match_score": 0.5758,
+        "details": "location=0/5 errors; dietary=0/4 errors; matched_rag_avg=0.576"
+      },
+      "agent2_compact_summary": "places=Spicy Style of Sichuan, The Capital Grille, Spice King Seattle, The Fisherman's Restaurant Seattle, Spice Waala; dishes=Dry-Fried Green Beans (Spicy Style of Sichuan), Vegetarian Thali (Spice King Seattle), Vegetable Kathi Roll (Spice Waala), Sweet Potato Fries (local spec",
+      "qc_turn": 1
+    }
+  ]
+}

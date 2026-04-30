@@ -1,0 +1,28 @@
+{
+  "session_id": "8de4a0c2-0d98-483b-9452-03f6e4f4b6ef",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No errors found. All location and dietary claims are correct.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5404,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.54"
+      },
+      "agent2_compact_summary": "places=So Tasty, Lunch On The Plate Bellevue, Taste of Xi'an, STK Steakhouse, Water Grill - Bellevue; dishes=Crispy Gluten-Free Fried Chicken, Taiwanese Beef Noodle Soup (gluten-free), Biang Biang Noodles (gluten-free), Gluten-Free Mango Sticky Rice, Grilled Steak (no sauces)",
+      "qc_turn": 1
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "session_id": "6492aa5c-260d-418e-8917-205be9d7448b",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All locations and gluten-free options match the brief.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.5362,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.536"
+      },
+      "agent2_compact_summary": "places=Hawksmoor Air Street, Asian Street Food Hawker, Tabard Street Food Market, Falafel Street food, Korean Street Food; dishes=Gluten-Free Chicken Satay with Peanut Sauce, Sweet Potato & Chive Fritters, Grilled Halloumi & Veggie Skewers, Jackfruit Bao Buns (Gluten-Free), Fruit",
+      "qc_turn": 1
+    }
+  ]
+}

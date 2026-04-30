@@ -1,0 +1,28 @@
+{
+  "session_id": "bb6d136b-ae23-42bf-ba7a-e87efcdf9cac",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "The list cites fish-based London spots, all menu items are non-caffeinated and comply with restrictions; correct location and dietary adherence confirmed by deterministic QC.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "avg_rag_match_score": 0.4874,
+        "details": "location=0/5 errors; dietary=0/5 errors; matched_rag_avg=0.487"
+      },
+      "agent2_compact_summary": "places=FishWorks, Fish! Borough Market Restaurant, Sweetings, Parsons, Randall & Aubin; dishes=Grilled Sea Bass with seasonal vegetables, Oyster platter with lemon and vinegar, Fish and chips with malt vinegar, Seafood chowder with cream and herbs, Lemon tart with fresh berries",
+      "qc_turn": 1
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "session_id": "9557688d-1568-4e8b-8dc3-eb2c4a19b204",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All recommended places in Liverpool meet vegan and gluten‑free criteria.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "details": "location=0/5 errors; dietary=0/5 errors"
+      },
+      "agent2_compact_summary": "places=Hawksmoor Liverpool, Johnny English Liverpool, Renshaw Street Food Market, 8 Water Street Mediterranean Bar & Grill, Gusto Italian - Liverpool; dishes=Vegan Jackfruit Tacos, Gluten-Free Chickpea Fritters, Gluten-Free Spiced Lentil Samosas, Roasted Beet & Walnut Salad, Swee",
+      "qc_turn": 1
+    }
+  ]
+}

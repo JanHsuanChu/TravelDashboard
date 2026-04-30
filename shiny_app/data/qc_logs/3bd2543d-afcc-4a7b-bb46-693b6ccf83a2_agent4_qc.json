@@ -1,0 +1,74 @@
+{
+  "session_id": "3bd2543d-afcc-4a7b-bb46-693b6ccf83a2",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Score matches deterministic QC: all correct, 5/5 location, 4/5 dietary. No errors found.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.607,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.607"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, The Capital Grille, Seattle Fish Guys, The Crab Pot Seattle; dishes=Fish and chips, Grilled halibut, Seafood tower, Poke bowl, Cedar-smoked salmon",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.597",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.597,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.597"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, East Anchor Seafood, The Crab Pot Seattle; dishes=Fish and chips, Grilled halibut, Seafood tower, Poke bowl, Cedar-smoked salmon",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All recommended Seattle seafood restaurants free of caffeine, matching the request.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5966,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.597"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Crab Pot Seattle, Six Seven Restaurant; dishes=Fish and chips, Grilled halibut, Seafood tower, Poke bowl, Cedar‑smoked salmon",
+      "qc_turn": 3
+    }
+  ]
+}
