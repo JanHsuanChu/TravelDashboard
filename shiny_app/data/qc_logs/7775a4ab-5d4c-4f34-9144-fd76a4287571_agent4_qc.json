@@ -1,0 +1,74 @@
+{
+  "session_id": "7775a4ab-5d4c-4f34-9144-fd76a4287571",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Location correct with 5/5 ratings; dietary correct, 4/5. Zero errors detected. RAG match score 0.546.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5455,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.546"
+      },
+      "agent2_compact_summary": "places=Por Favor Tacos & Tragos, Tommy's Tacos, Mariscos Altamar #2, Tacos Del Gordo, Dos Dos; dishes=Al Pastor Tacos, Grilled Fish Tacos, Spicy Shrimp Noodles, Seafood Ceviche, Chicken Tinga Tacos",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All listings match Colorado Springs locations and dietary tags. Accurate details and relevant dish options; reliable suggestions.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5471,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.547"
+      },
+      "agent2_compact_summary": "places=Por Favor Tacos & Tragos, Tommy's Tacos, Mariscos Altamar #2, Tacos Del Gordo, Dos Dos; dishes=Al Pastor Tacos, Grilled Fish Tacos, Spicy Shrimp Noodles, Seafood Ceviche, Chicken Tinga Tacos",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All checks passed; no errors found.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5493,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.549"
+      },
+      "agent2_compact_summary": "places=Por Favor Tacos & Tragos, Tommy's Tacos, Mariscos Altamar #2, Tacos Del Gordo, Dos Dos; dishes=Al Pastor Tacos, Grilled Fish Tacos, Spicy Shrimp Noodles, Seafood Ceviche, Chicken Tinga Tacos",
+      "qc_turn": 3
+    }
+  ]
+}

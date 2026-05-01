@@ -1,0 +1,27 @@
+{
+  "session_id": "a4184503-f120-4281-858c-cf18e1b0e98c",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No location or dietary errors detected.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "details": "location=0/5 errors; dietary=0/0 errors"
+      },
+      "agent2_compact_summary": "places=Fuhong Beef Noodles, Mai Mien Yen Tsai, Yongkang Beef Noodles, Lao Shandong Homemade Noodles, MuJi Beef Noodles; dishes=Beef Noodle Soup – broth rich, beef tender, Sesame Oil Noodles – vegetarian-friendly, Spicy Soup Noodles – mild heat, beef chunks, Braised Pork Belly Ric",
+      "qc_turn": 1
+    }
+  ]
+}

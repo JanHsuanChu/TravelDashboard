@@ -1,0 +1,74 @@
+{
+  "session_id": "6b2c2741-17ae-431d-9320-64a946d45cab",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.487",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4874,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.487"
+      },
+      "agent2_compact_summary": "places=FishWorks, Fish! Borough Market Restaurant, Sweetings, Parsons, Randall & Aubin; dishes=Bouillabaisse, Fish and chips, Scallops wrapped in bacon, Monkfish Wellington, Oyster platter",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No caffeinated foods mentioned; all listed locations correct and relevant to London dining.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4874,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.487"
+      },
+      "agent2_compact_summary": "places=FishWorks, Fish! Borough Market Restaurant, Sweetings, Parsons, Randall & Aubin; dishes=Fish and chips, Scallops wrapped in bacon, Monkfish Wellington, Bouillabaisse",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.487",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4874,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.487"
+      },
+      "agent2_compact_summary": "places=FishWorks, Fish! Borough Market Restaurant, Sweetings, Parsons, Randall & Aubin; dishes=Fish and chips, Scallops wrapped in bacon, Monkfish Wellington, Bouillabaisse, Crispy battered cod with hand‑cut chips",
+      "qc_turn": 3
+    }
+  ]
+}

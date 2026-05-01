@@ -1,0 +1,27 @@
+{
+  "session_id": "8145c6fd-2527-46f4-bced-31554fd01903",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Excellent: no location or dietary errors.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 5,
+        "details": "location=0/5 errors; dietary=0/5 errors"
+      },
+      "agent2_compact_summary": "places=City O' City, Modern Market Eatery - Champa, SubCulture, STK Steakhouse, Kealoha's BBQ; dishes=Quinoa-stuffed roasted peppers, Colorado lentil stew, Southwestern veggie burger, Apple cinnamon crumble, Smoked tofu tacos",
+      "qc_turn": 1
+    }
+  ]
+}

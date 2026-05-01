@@ -311,6 +311,7 @@ def run_agent1_places_rag(
     destination_label: str,
     preference_narrative: str,
     api_key: str | None = None,
+    learned_weights: dict[str, Any] | None = None,
     top_k: int = 5,
     search_page_size: int = 12,
 ) -> tuple[list[dict[str, Any]], str | None]:
@@ -377,6 +378,31 @@ def run_agent1_places_rag(
     if kw_tokens:
         boosts = np.array([_keyword_hit_count(docs[i], kw_tokens) for i in range(len(docs))], dtype=np.float64)
         scores = scores + np.minimum(_KEYWORD_BOOST_CAP, boosts * _KEYWORD_BOOST_PER_HIT)
+
+    # Optional additive rerank: learned weights can nudge results but must not dominate embeddings.
+    lw = learned_weights or {}
+    if isinstance(lw, dict):
+        pop = lw.get("popularity_weight")
+        if pop is not None:
+            try:
+                pw = float(pop)
+            except (TypeError, ValueError):
+                pw = 0.0
+            pw = max(0.0, min(1.0, pw))
+            if pw > 0:
+                # Use rating and userRatingCount available in the search results doc string.
+                # We approximate from doc text to stay additive without extra API calls.
+                pops = np.zeros(len(docs), dtype=np.float64)
+                for i, p in enumerate(raw_places):
+                    r = p.get("rating") or 0
+                    c = p.get("userRatingCount") or 0
+                    try:
+                        pops[i] = float(r) * (min(float(c), 2000.0) ** 0.5)
+                    except (TypeError, ValueError):
+                        pops[i] = 0.0
+                if pops.max() > 0:
+                    pops = pops / pops.max()
+                    scores = scores + (0.08 * pw * pops)
 
     order = np.argsort(-scores)
     seen: set[str] = set()

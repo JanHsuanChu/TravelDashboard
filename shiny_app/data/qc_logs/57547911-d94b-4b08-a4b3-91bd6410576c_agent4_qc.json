@@ -1,0 +1,74 @@
+{
+  "session_id": "57547911-d94b-4b08-a4b3-91bd6410576c",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Location and dietary tags accurately reflected. No errors identified. Detected low matching score indicates a mild uncertainty but overall compliance is high.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4824,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.482"
+      },
+      "agent2_compact_summary": "places=Fishmonger Stand Fujiko, Arigato Kitchen Seafood Izakaya, C:GRILL, Ebinosekai, Shellfish,Shrimp&Crab; dishes=Grilled Sea Bream (Sakana no Shioyaki), Assorted Sashimi Platter, Kushikatsu with Shrimp & Squid, Osaka‑style Takoyaki (Octopus Balls), Seasonal Local Specialty Cur",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent2 meets location and dietary criteria, no errors identified; rated high on location accuracy, slight caution on caffeine avoidance.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4823,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.482"
+      },
+      "agent2_compact_summary": "places=Fishmonger Stand Fujiko, Arigato Kitchen Seafood Izakaya, C:GRILL, Ebinosekai, Shellfish,Shrimp&Crab; dishes=Grilled Sea Bream (Sakana no Shioyaki), Assorted Sashimi Platter, Kushikatsu with Shrimp & Squid, Osaka‑style Takoyaki (Octopus Balls), Seasonal Local Specialty Cur",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All recommended places match Osaka location and avoid caffeine, satisfying restrictions. Quality high.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4825,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.482"
+      },
+      "agent2_compact_summary": "places=Fishmonger Stand Fujiko, Arigato Kitchen Seafood Izakaya, C:GRILL, Ebinosekai, Shellfish,Shrimp&Crab; dishes=Grilled Sea Bream (Sakana no Shioyaki), Assorted Sashimi Platter, Kushikatsu with Shrimp & Squid, Osaka‑style Takoyaki (Octopus Balls), Seasonal Local Specialty Cur",
+      "qc_turn": 3
+    }
+  ]
+}

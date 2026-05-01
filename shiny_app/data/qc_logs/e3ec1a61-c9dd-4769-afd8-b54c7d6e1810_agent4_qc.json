@@ -1,0 +1,74 @@
+{
+  "session_id": "e3ec1a61-c9dd-4769-afd8-b54c7d6e1810",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.51",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5098,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.51"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Capital Grille, RockCreek Seafood & Spirits; dishes=Garlic Butter Steamed Cod, Crispy Fish and Chips, Seattle-Style Smoked Salmon Poke Bowl, Geoduck Chowder, Dungeness Crab Cakes",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.51",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5096,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.51"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Capital Grille, RockCreek Seafood & Spirits; dishes=Garlic Butter Steamed Cod, Crispy Fish and Chips, Seattle-Style Smoked Salmon Poke Bowl, Geoduck Chowder, Dungeness Crab Cakes",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.503",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5035,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.503"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Crab Pot Seattle, Six Seven Restaurant; dishes=Garlic Butter Steamed Cod, Crispy Fish and Chips, Seattle‑Style Smoked Salmon Poke Bowl, Geoduck Chowder, Dungeness Crab Cakes",
+      "qc_turn": 3
+    }
+  ]
+}

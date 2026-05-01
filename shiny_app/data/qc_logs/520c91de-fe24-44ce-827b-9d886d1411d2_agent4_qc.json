@@ -1,0 +1,74 @@
+{
+  "session_id": "520c91de-fe24-44ce-827b-9d886d1411d2",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No errors detected. Location 5/5 confidence, dietary 4/5 confidence. Matched RAG avg 0.601.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.6005,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.601"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Capital Grille, East Anchor Seafood; dishes=Steamed Salmon, Fish and Chips, Poke Bowl, Seafood Tower, Fish Tacos",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All locations match Seattle and dietary guidance: non‑caffeinated. Four‑star rating reflects high confidence; one star reserved for missing side info on Poke Bowl caffeine content. Overall reliable.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.6003,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.6"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Capital Grille, Six Seven Restaurant; dishes=Steamed Salmon, Fish and Chips, Poke Bowl, Seafood Tower, Grilled Alaskan Salmon",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 listed seafood spots in Seattle with non‑caffeinated dishes such as grilled salmon, chowder, and poke bowl, matching user requirements.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5927,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.593"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, Six Seven Restaurant, The Crab Pot Seattle; dishes=Steamed Salmon, Fish and Chips, Poke Bowl, Grilled Alaskan Salmon, Seafood Chowder",
+      "qc_turn": 3
+    }
+  ]
+}

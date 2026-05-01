@@ -1,0 +1,74 @@
+{
+  "session_id": "2dea3a10-40bb-4ecf-b9ec-c332049077ba",
+  "turns": [
+    {
+      "location_likert": 4,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent2 provided accurate, non-caffeinated seafood options in NYC. All listed spots match location; dietary needs satisfied. Relevance moderate due to limited matches.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 4,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 3,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4644,
+        "details": "location=0/3 errors; dietary=0/0 errors; matched_rag_avg=0.464"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar, 1803 NYC; dishes=Oysters on the half shell, Seared Scallops with Lemon Butter, Cajun Shrimp Étouffée, Grilled Local Flounder, Smoked Salmon Bagel with Cream Cheese",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.428",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4281,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.428"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar, 1803 NYC, Crevette, abc kitchen; dishes=Oysters on the half shell, Seared Scallops with Lemon Butter, Cajun Shrimp Étouffée, Grilled Local Flounder, Smoked Salmon Bagel with Cream Cheese",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "No errors in location or dietary; meets all criteria. RAG match average 0.43.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4299,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.43"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar, 1803 NYC, Ocean Prime, Crevette; dishes=Oysters on the half shell, Seared Scallops with Lemon Butter, Cajun Shrimp Étouffée, Grilled Local Flounder, Smoked Salmon Bagel with Cream Cheese",
+      "qc_turn": 3
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "session_id": "e929c6fd-714a-4913-871b-3775b7644ceb",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.534",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5336,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.534"
+      },
+      "agent2_compact_summary": "places=Nishikawa Fresh Fish Store, Kobebeef Teppanyaki RIO Osaka Mido-suji, C:GRILL, Arigato Kitchen Seafood Izakaya, Shellfish,Shrimp&Crab; dishes=Sea Urchin Sashimi, Melt-in-your-mouth Steak, Assorted Sashimi Platter, Garlic Shrimp Stir-fry, Grilled Sea Bass with Citrus",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.53",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5304,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.53"
+      },
+      "agent2_compact_summary": "places=Kobebeef Teppanyaki RIO Osaka Mido-suji, C:GRILL, Arigato Kitchen Seafood Izakaya, Shellfish,Shrimp&Crab, Ebinosekai; dishes=Prime Beef Teppanyaki, Assorted Sashimi Platter, Garlic Shrimp Stir-fry, Grilled Sea Bass with Yuzu, Shrimp Tempura",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Sakahata includes non‑caffeinated seafood, grill options, and sashimi per request, ensuring compliance with dietary restriction and evenly distributed city locations.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5282,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.528"
+      },
+      "agent2_compact_summary": "places=Kobebeef Teppanyaki RIO Osaka Mido-suji, C:GRILL, Arigato Kitchen Seafood Izakaya, Shellfish,Shrimp&Crab, Ebinosekai; dishes=Prime Beef Teppanyaki, Assorted Sashimi Platter, Garlic Shrimp Stir-fry, Grilled Sea Bass with Yuzu, Shrimp Tempura",
+      "qc_turn": 3
+    }
+  ]
+}

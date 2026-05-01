@@ -26,14 +26,16 @@ from shiny import reactive, render, ui
 
 import shiny_app.tags as tagdata
 from shiny_app.context import load_architecture_markdown
+from shiny_app.components import food_preference_combined_content
 from shiny_app.iso2_bridge import friendliness_country_query, is_known_iso2
-from shiny_app.ollama_client import extract_json_object, ollama_chat, resolved_model_agent2
+from shiny_app.ollama_client import extract_json_object, ollama_chat, resolved_model_agent2, resolved_model_other
 from shiny_app.plan_logic import (
     AGENT2_DINING_GROUNDING,
     SYSTEM_JSON_INSTRUCTION,
     build_trip_context,
     user_prompt_from_context,
 )
+from shiny_app.agent_loop import LoopBudgets, run_orchestrator_loop, validate_plan_guardrails
 from shiny_app.restaurant_rag import (
     preference_narrative_from_supabase_row,
     preference_narrative_from_trip_food,
@@ -244,6 +246,19 @@ def _default_plan() -> dict:
                 {"label": "Compare 1", "score": 0},
                 {"label": "Compare 2", "score": 0},
             ],
+        },
+        "_meta": {
+            "agent4_qc": {
+                "initial_scores": {"location_likert": None, "dietary_likert": None},
+                "final_scores": {"location_likert": None, "dietary_likert": None},
+                "validation_results": {"location_correct": None, "dietary_correct": None},
+                "error_rates": {"location": None, "dietary": None},
+                "turns_used": 0,
+                "max_turns": 3,
+                "all_five": False,
+                "detail": "",
+                "qc_log_path": "",
+            }
         },
     }
 
@@ -524,6 +539,379 @@ def server(input, output, session):
     last_lookup_email = reactive.Value(None)
     last_saved_iso = reactive.Value("")
     last_welcome_key = reactive.Value(None)
+    agent_session_id = reactive.Value("")
+    agent_pending_question = reactive.Value("")
+    agent_status_msg = reactive.Value("")
+    food_collapsed = reactive.Value(False)
+    chat_messages = reactive.Value([])  # list[dict{role, content, includes_recs, chips, saved_notice}]
+    chat_assistant_turns = reactive.Value(0)
+    quick_replies_state = reactive.Value([])  # list[dict{label,message}]
+    status_panel_open = reactive.Value(True)
+    qc_widget_open = reactive.Value(False)
+    saved_pref_notice = reactive.Value("")  # one-line last notice for UI
+    initial_food_state = reactive.Value(None)  # snapshot of food prefs from initial Generate
+
+    def _append_chat(role: str, content: str, *, includes_recs: bool = False) -> None:
+        rows = list(chat_messages() or [])
+        rows.append({"role": role, "content": content, "includes_recs": bool(includes_recs)})
+        chat_messages.set(rows)
+        if role == "assistant":
+            chat_assistant_turns.set(int(chat_assistant_turns() or 0) + 1)
+
+    def _is_new_area_refinement(msg: str) -> bool:
+        m = (msg or "").strip().lower()
+        if not m:
+            return False
+        cues = (
+            "another district",
+            "different district",
+            "another area",
+            "different area",
+            "another location",
+            "different location",
+            "somewhere else",
+            "elsewhere",
+        )
+        return any(c in m for c in cues)
+
+    def _requested_outside_guardrail_location(msg: str, *, ctx: dict) -> str | None:
+        """
+        Detect likely destination override requests in chat refinements.
+        Returns a short location phrase if user asks for a different location
+        than the current destination guardrail; otherwise None.
+        """
+        m = " ".join((msg or "").strip().lower().split())
+        if not m:
+            return None
+        dest = (ctx.get("destination") or {}) if isinstance(ctx.get("destination"), dict) else {}
+        cur_city = str(dest.get("city") or "").strip().lower()
+        cur_country = str(dest.get("country") or "").strip().lower()
+        # Look for common "in X" style requests.
+        mm = re.search(r"\b(?:in|at|around|near)\s+([a-z][a-z\.\-\s]{1,60})", m)
+        if not mm:
+            return None
+        raw = " ".join(mm.group(1).strip().split())
+        stop_tokens = {"for", "with", "that", "which", "where", "and", "but", "please", "instead"}
+        parts = raw.split()
+        cut = len(parts)
+        for i, p in enumerate(parts):
+            if p in stop_tokens:
+                cut = i
+                break
+        req = " ".join(parts[:cut]).strip(" ,.")
+        if len(req) < 3:
+            return None
+        if cur_city and cur_city in req:
+            return None
+        if cur_country and cur_country in req:
+            return None
+        # Stronger signals that this is a destination change intent.
+        if any(k in m for k in ("recommendations in ", "restaurants in ", "find me in ", "in ")):
+            return req
+        return None
+
+    def _tag_label_map(d: dict[str, str], slugs: list[str]) -> list[str]:
+        out = []
+        for s in slugs or []:
+            if s in d:
+                out.append(d[s])
+        return out
+
+    def _text_to_chips(text: str) -> list[str]:
+        """
+        Split free-text into multiple short chips. Simple fallback:
+        - split on comma/semicolon/newline
+        - also split on ' and ' for short lists
+        """
+        raw = (text or "").strip()
+        if not raw:
+            return []
+        s = raw.replace("\r\n", "\n").replace(";", ",")
+        parts: list[str] = []
+        for line in s.split("\n"):
+            for chunk in line.split(","):
+                c = " ".join(chunk.split()).strip()
+                if not c:
+                    continue
+                parts.append(c)
+        out: list[str] = []
+        for p in parts:
+            if len(p) > 46:
+                p = p[:46].rsplit(" ", 1)[0] if " " in p[:46] else p[:46]
+            if p and p.lower() not in {x.lower() for x in out}:
+                out.append(p)
+        return out[:8]
+
+    def _context_tags_for_ui() -> dict[str, list[str]]:
+        wm = input.when_mode()
+        ws = input.when_season() if wm == "season" else None
+        wmth = input.when_month() if wm == "month" else None
+        loc = ", ".join(
+            p
+            for p in (
+                (input.dest_city() or "").strip(),
+                (input.dest_country() or "").strip(),
+            )
+            if p
+        )
+        when_tag = ""
+        if wm == "season" and ws:
+            when_tag = str(tagdata.SEASON_CHOICES.get(str(ws), ws))
+        elif wm == "month" and wmth:
+            when_tag = str(tagdata.MONTH_CHOICES.get(str(wmth), wmth))
+        like = _tag_label_map(tagdata.FOOD_LIKE_CHOICES, _as_tag_list(input.like_tags()))
+        dislike = _tag_label_map(tagdata.FOOD_DISLIKE_CHOICES, _as_tag_list(input.dislike_tags()))
+        dietary = _tag_label_map(tagdata.DIETARY_CHOICES, _as_tag_list(input.dietary_tags()))
+        # Free-text chips: include in UI/status; dietary text is treated as blocker context.
+        like_text_chips = _text_to_chips(input.food_like_text() or "")
+        dislike_text_chips = _text_to_chips(input.food_dislike_text() or "")
+        dietary_text_chips = _text_to_chips(input.dietary_restrictions_text() or "")
+        return {
+            "location": [x for x in (loc, when_tag) if x],
+            "dietary": dietary + dietary_text_chips,
+            "like": like + like_text_chips,
+            "dislike": dislike + dislike_text_chips,
+        }
+
+    def _maybe_generate_quick_replies(*, ctx: dict, plan: dict, last_user_message: str | None = None) -> None:
+        """
+        LLM-generated quick reply chips (validated server-side).
+        """
+        def _fallback_chips(*, last_user_message: str | None) -> list[dict[str, str]]:
+            m = (last_user_message or "").strip().lower()
+            facts = _context_tags_for_ui()
+            out: list[dict[str, str]] = [
+                {"label": "Cheaper options", "message": "Show me cheaper options."},
+                {"label": "More like #1", "message": "More like #1, please."},
+                {"label": "Different area", "message": "Try a different area in the city."},
+            ]
+            if any(x in m for x in ("dessert", "sweet", "cake", "pastry", "ice cream")):
+                out.append({"label": "Desserts", "message": "Prioritize places with great desserts."})
+            if any(x in m for x in ("not spicy", "less spicy", "mild", "avoid spicy")) or ("Spicy" in (facts.get("like") or [])):
+                out.append({"label": "Less spicy", "message": "Less spicy options, please."})
+            if any("vegetarian" in str(x).lower() or "vegan" in str(x).lower() for x in (facts.get("dietary") or [])):
+                out.append({"label": "Veg-friendly", "message": "More vegetarian/vegan-friendly options."})
+            if any(x in m for x in ("walk in", "walk-in", "no reservation", "no reservations")):
+                out.append({"label": "Walk-in ok", "message": "No reservation needed (walk-in friendly)."})
+            # Keep 3–6 chips.
+            return out[:6]
+
+        last_msg = (last_user_message or "").strip()
+        try:
+            places = ((plan.get("dining") or {}).get("places") or [])[:3]
+            top = [str(p.get("title") or "").strip() for p in places if isinstance(p, dict) and (p.get("title") or "").strip()]
+            facts = _context_tags_for_ui()
+            sys = (
+                "You propose quick reply chips for a travel dining recommender.\n"
+                "Return ONLY one JSON object:\n"
+                '{"chips":[{"label":"...","message":"..."}]}\n'
+                "Rules:\n"
+                "- 3 to 6 chips\n"
+                "- label <= 24 chars; message <= 80 chars\n"
+                "- No URLs\n"
+                "- Messages should be short user intents (e.g. 'cheaper options', 'more like #1', 'different area')\n"
+                "- Use the form context; do not ask for location/dietary/dislikes.\n"
+                "- Avoid repeating the same chips every turn.\n"
+            )
+            user = (
+                "Context:\n"
+                + str({"location": facts["location"], "dietary": facts["dietary"], "likes": facts["like"], "dislikes": facts["dislike"]})
+                + "\nLast user message:\n"
+                + (last_msg or "(none)")
+                + "\nTop places:\n"
+                + ", ".join(top)
+            )
+            raw = ollama_chat(
+                [{"role": "system", "content": sys}, {"role": "user", "content": user}],
+                model=resolved_model_other(),
+            )
+            obj = extract_json_object(raw) or {}
+            chips = obj.get("chips") if isinstance(obj, dict) else None
+            out = []
+            if isinstance(chips, list):
+                for c in chips[:6]:
+                    if not isinstance(c, dict):
+                        continue
+                    label = str(c.get("label") or "").strip()
+                    message = str(c.get("message") or "").strip()
+                    if not label or not message:
+                        continue
+                    if "http://" in message or "https://" in message:
+                        continue
+                    if len(label) > 24 or len(message) > 80:
+                        continue
+                    out.append({"label": label, "message": message})
+            if len(out) >= 3:
+                logger.info("chips_llm_ok n=%s", len(out))
+                quick_replies_state.set(out)
+                return
+            logger.warning("chips_llm_invalid raw=%s", _safe_text_snippet(raw))
+        except Exception as e:
+            logger.warning("chips_llm_fallback err=%s", e)
+        quick_replies_state.set(_fallback_chips(last_user_message=last_msg))
+
+    def _safe_text_snippet(s: str | None, *, max_chars: int = 400) -> str:
+        t = (s or "").strip().replace("\n", " ")
+        return (t[:max_chars] + "…") if len(t) > max_chars else t
+
+    def _assistant_followup_message(*, ctx: dict, user_message: str, plan: dict, cards_shown: bool) -> str:
+        """
+        LLM-written follow-up: 1–3 sentences. May ask one clarifying question when needed.
+        """
+        places = ((plan.get("dining") or {}).get("places") or [])[:3]
+        top = [str(p.get("title") or "").strip() for p in places if isinstance(p, dict) and (p.get("title") or "").strip()]
+        facts = _context_tags_for_ui()
+        sys = (
+            "You are the Food guide assistant in a travel dashboard chat widget.\n"
+            "Write a short reply (1–3 sentences) responding to the user's latest message.\n"
+            "Rules:\n"
+            "- Do NOT re-ask location, timing, dietary restrictions, or dislikes.\n"
+            "- If you need more info, ask at most ONE clarifying question.\n"
+            "- If recommendations were refreshed, say so briefly.\n"
+            "- No bullet lists.\n"
+        )
+        user = (
+            "From the form (read-only):\n"
+            + str({"location": facts["location"], "dietary": facts["dietary"], "likes": facts["like"], "dislikes": facts["dislike"]})
+            + "\nUser message:\n"
+            + user_message.strip()
+            + "\nTop places:\n"
+            + ", ".join(top)
+            + "\nCards shown:\n"
+            + ("yes" if cards_shown else "no")
+        )
+        try:
+            raw = ollama_chat(
+                [{"role": "system", "content": sys}, {"role": "user", "content": user}],
+                model=resolved_model_other(),
+            )
+            msg = (raw or "").strip()
+            if msg:
+                logger.info("followup_llm_ok chars=%s", len(msg))
+                return msg
+        except Exception as e:
+            logger.warning("followup_llm_fallback err=%s", e)
+        # Deterministic fallback if LLM fails.
+        short = user_message.strip()
+        short = short[:120] + "…" if len(short) > 120 else short
+        return f"Got it — {short}"
+
+    def _maybe_save_durable_delta(*, msg: str, ctx: dict) -> None:
+        """
+        Save durable deltas to the preference table (append-only).
+        De-dup against current form values and latest stored preference.
+        """
+        if not _identity_complete(input):
+            return
+        m = (msg or "").strip().lower()
+        if not m:
+            return
+
+        # Example durable delta: "avoid spicy"
+        avoid_spicy = ("avoid spicy" in m) or ("no spicy" in m) or ("not spicy" in m)
+        if not avoid_spicy:
+            # Example durable delta: "no raw fish"
+            if "no raw fish" in m or "avoid raw fish" in m:
+                # For now store this as a dislike text hint (append-only preference row).
+                em = normalize_email(input.user_email() or "")
+                _, pref_row = fetch_user_and_latest_preference(em)
+                stored_dr = (pref_row.get("dietary_restrictions") or "") if pref_row else ""
+                if "raw fish" in stored_dr.lower():
+                    return
+                uid = get_or_create_user(email=em, first_name=(input.user_first_name() or "").strip())
+                insert_preference(
+                    user_id=uid,
+                    food_like_text=(input.food_like_text() or "") or None,
+                    food_dislike_text=(input.food_dislike_text() or "") or None,
+                    dietary_restrictions=((input.dietary_restrictions_text() or "") + " No raw fish.").strip() or None,
+                    food_tags=_food_tags_from_input(input),
+                )
+                saved_pref_notice.set('✓ "No raw fish" saved to your profile')
+            return
+
+        # De-dup: if already selected as dislike or not present as a like, skip.
+        cur_like = set(_as_tag_list(input.like_tags()))
+        cur_dislike = set(_as_tag_list(input.dislike_tags()))
+        if "spicy" in cur_dislike:
+            return
+
+        em = normalize_email(input.user_email() or "")
+        _, pref_row = fetch_user_and_latest_preference(em)
+        stored_dislike = set()
+        stored_like = set()
+        if pref_row and isinstance(pref_row.get("food_tags"), dict):
+            ft = pref_row.get("food_tags") or {}
+            stored_like = set(ft.get("like") or [])
+            stored_dislike = set(ft.get("dislike") or [])
+        if "spicy" in stored_dislike:
+            return
+
+        # Merge: remove from likes if present, add to dislikes.
+        new_like = [x for x in cur_like if x != "spicy"]
+        new_dislike = sorted(list(cur_dislike | {"spicy"}))
+        new_tags = {
+            "like": new_like,
+            "dislike": new_dislike,
+            "dietary": _as_tag_list(input.dietary_tags()),
+        }
+        uid = get_or_create_user(email=em, first_name=(input.user_first_name() or "").strip())
+        insert_preference(
+            user_id=uid,
+            food_like_text=(input.food_like_text() or "") or None,
+            food_dislike_text=(input.food_dislike_text() or "") or None,
+            dietary_restrictions=(input.dietary_restrictions_text() or "") or None,
+            food_tags=new_tags,
+        )
+        saved_pref_notice.set('✓ "Avoid spicy" saved to your profile')
+
+    def _food_summary_from_ctx(ctx: dict) -> str:
+        food = ctx.get("food") or {}
+        like = ", ".join(str(x) for x in (food.get("like_tags") or []) if x)
+        dislike = ", ".join(str(x) for x in (food.get("dislike_tags") or []) if x)
+        dietary = ", ".join(str(x) for x in (food.get("dietary_tags") or []) if x)
+        parts = []
+        if like:
+            parts.append(f"Likes: {like}")
+        if dislike:
+            parts.append(f"Dislikes: {dislike}")
+        if dietary:
+            parts.append(f"Dietary: {dietary}")
+        return " · ".join(parts) if parts else "No food preferences set."
+
+    def _opening_message(ctx: dict, plan: dict) -> str:
+        dest = (ctx.get("destination") or {})
+        when = (ctx.get("when") or {})
+        food = (ctx.get("food") or {})
+        city = (dest.get("city") or "").strip()
+        country = (dest.get("country") or "").strip()
+        loc = ", ".join(x for x in (city, country) if x) or "your destination"
+        mode = (when.get("mode") or "").strip()
+        timing = ""
+        if mode == "season" and when.get("season"):
+            timing = str(tagdata.SEASON_CHOICES.get(str(when.get("season")), when.get("season")))
+        elif mode == "month" and when.get("month"):
+            timing = str(tagdata.MONTH_CHOICES.get(str(when.get("month")), when.get("month")))
+
+        dietary_labels = _tag_label_map(tagdata.DIETARY_CHOICES, list(food.get("dietary_tags") or []))
+        like_labels = _tag_label_map(tagdata.FOOD_LIKE_CHOICES, list(food.get("like_tags") or []))
+
+        timing_phrase = f"in {timing}" if timing else ""
+        dietary_phrase = f" as a {', '.join(dietary_labels)}" if dietary_labels else ""
+
+        like_phrase = ""
+        if like_labels:
+            top = like_labels[:2]
+            if len(top) == 1:
+                like_phrase = f" You love {top[0].lower()}."
+            else:
+                like_phrase = f" You love {top[0].lower()} and {top[1].lower()}."
+
+        places = ((plan.get("dining") or {}).get("places") or [])[:3]
+        starters = "\n".join(f"- {(p.get('title') or '—').strip()}" for p in places if isinstance(p, dict))
+        starters = starters or "- (No places yet — enable Google Places or try again.)"
+        head = f"You're heading to {loc} {timing_phrase}{dietary_phrase}."
+        head = " ".join(head.split())
+        return head + like_phrase + "\n\nHere are 3 spots to start with:"
 
     @render.text
     def last_saved_hint():
@@ -676,6 +1064,11 @@ def server(input, output, session):
             fr_fut = friend_pool.submit(compute_friendliness, dc, cmp1_c, cmp2_c)
 
         try:
+            food_collapsed.set(False)
+            chat_messages.set([])
+            chat_assistant_turns.set(0)
+            quick_replies_state.set([])
+            saved_pref_notice.set("")
             skipped_persist = not _identity_complete(input)
             if not skipped_persist:
                 try:
@@ -710,6 +1103,7 @@ def server(input, output, session):
                     "dietary_restrictions_text": input.dietary_restrictions_text(),
                 }
             )
+            initial_food_state.set(dict(ctx.get("food") or {}))
 
             dest_label = ", ".join(
                 p
@@ -741,50 +1135,45 @@ def server(input, output, session):
 
             places_error_state.set("")
             agent1_candidates: list = []
-            if os.environ.get("GOOGLE_PLACES_API_KEY", "").strip():
-                agent1_candidates, rag_err = run_agent1_places_rag(
+            generated_ok = False
+            try:
+                arch = _architecture_for_plan_llm()
+                budgets = LoopBudgets(min_llm_turns=2, max_llm_turns=6, max_retrieval_reruns=6)
+                res = run_orchestrator_loop(
+                    ctx=ctx,
+                    architecture_md=arch,
                     destination_label=dest_label or (input.dest_country() or "").strip(),
                     preference_narrative=pref_narrative,
+                    budgets=budgets,
                 )
-                if rag_err:
-                    places_error_state.set(rag_err)
+                agent_session_id.set(res.session_id)
+                if res.status == "needs_clarification":
+                    agent_pending_question.set(res.question or "")
+                    agent_status_msg.set("Waiting for your answer.")
+                    _append_chat("assistant", res.question or "One quick question to improve the picks:", includes_recs=False)
                     ui.notification_show(
-                        ui.span(
-                            "Restaurant retrieval failed — full message is in the red box "
-                            "under Dining — recommended places (scroll if needed)."
-                        ),
-                        type="warning",
-                        duration=12,
+                        ui.span("I have a quick question to improve the recommendations—answer below and press Send."),
+                        type="message",
+                        duration=10,
                         session=session,
                     )
+                    return
+                if res.status != "final" or not res.plan:
+                    raise RuntimeError(res.detail or "Orchestrator failed.")
 
-            arch = _architecture_for_plan_llm()
-            system_parts = [
-                f"Architecture context:\n\n{arch}\n\n{SYSTEM_JSON_INSTRUCTION}",
-            ]
-            if agent1_candidates:
-                system_parts.append(AGENT2_DINING_GROUNDING.strip())
-            messages = [
-                {"role": "system", "content": "\n\n".join(system_parts)},
-                {
-                    "role": "user",
-                    "content": user_prompt_from_context(ctx, agent1_candidates),
-                },
-            ]
-            try:
-                with ThreadPoolExecutor(max_workers=2) as _adv_pool:
-                    fut_plan = _adv_pool.submit(
-                        ollama_chat,
-                        messages,
-                        model=resolved_model_agent2(),
-                    )
+                parsed = dict(res.plan)
+                agent1_candidates = list(res.agent1_candidates or [])
+                ok_guard, guard_err = validate_plan_guardrails(
+                    plan=parsed, ctx=ctx, agent1_candidates=agent1_candidates
+                )
+                if not ok_guard:
+                    agent_status_msg.set(guard_err or "Guardrail blocked the recommendation.")
+                    ui.notification_show(ui.span("Guardrail blocked the recommendation; see status box."), type="error", session=session)
+                    return
+
+                with ThreadPoolExecutor(max_workers=1) as _adv_pool:
                     fut_snap = _adv_pool.submit(get_advisory_snapshot)
-                    raw = fut_plan.result()
                     snap = fut_snap.result()
-                parsed = extract_json_object(raw)
-                if parsed and isinstance(parsed, dict):
-                    parsed = dict(parsed)
-                    parsed.pop("friendliness", None)
                     matched = match_advisory_row(
                         snap.rows,
                         iso2=dc_iso,
@@ -810,6 +1199,19 @@ def server(input, output, session):
                     plan_state.set(parsed)
                     map_places_state.set(_markers_from_candidates(agent1_candidates))
                     ui.update_text("map_place_pick", value="0", session=session)
+                    agent_pending_question.set("")
+                    qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
+                    fs = (qc_meta.get("final_scores") or {}) if isinstance(qc_meta, dict) else {}
+                    loc_s = fs.get("location_likert")
+                    diet_s = fs.get("dietary_likert")
+                    qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
+                    agent_status_msg.set(
+                        f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
+                    )
+                    food_collapsed.set(True)
+                    _append_chat("assistant", _opening_message(ctx, parsed), includes_recs=True)
+                    generated_ok = True
+                    _maybe_generate_quick_replies(ctx=ctx, plan=parsed, last_user_message=None)
                     if skipped_persist:
                         ui.notification_show(
                             ui.span(
@@ -825,15 +1227,33 @@ def server(input, output, session):
                             else "Updated outputs from model."
                         )
                         ui.notification_show(ui.span(msg), type="message", session=session)
-                else:
-                    ui.notification_show(
-                        ui.span("Model did not return valid JSON; showing previous outputs."),
-                        type="warning",
-                        session=session,
-                    )
             except Exception as e:
+                if generated_ok:
+                    # Late-stage error after recommendations were already produced.
+                    # Keep outputs/chat, but surface the failure in the status box and a toast.
+                    detail = str(e).strip()
+                    if detail:
+                        msg_detail = f"{type(e).__name__}: {detail}"
+                    else:
+                        msg_detail = f"{type(e).__name__}: {repr(e)}"
+                    agent_status_msg.set(f"Generate warning: {msg_detail}")
+                    ui.notification_show(ui.span(f"Generate warning: {msg_detail}"), type="warning", session=session)
+                    return
+                detail = str(e).strip()
+                if detail:
+                    msg_detail = f"{type(e).__name__}: {detail}"
+                else:
+                    msg_detail = f"{type(e).__name__}: {repr(e)}"
+                agent_status_msg.set(f"Generate failed: {msg_detail}")
+                _append_chat(
+                    "assistant",
+                    "I couldn't generate recommendations just now.\n\n"
+                    f"**Error**: `{msg_detail}`\n\n"
+                    "Try again in a moment. If this keeps happening, check that your API keys are set and the network is available.",
+                    includes_recs=False,
+                )
                 ui.notification_show(
-                    ui.span(f"Generate failed (check OLLAMA_API_KEY): {e}"),
+                    ui.span(f"Generate failed: {msg_detail}"),
                     type="error",
                     session=session,
                 )
@@ -944,6 +1364,693 @@ def server(input, output, session):
     @render.ui
     def out_essential():
         return ui.markdown(_format_essential(plan_state()))
+
+    @reactive.effect
+    @reactive.event(input.btn_agent_send)
+    def _agent_send():
+        sid = (agent_session_id() or "").strip()
+        q = (agent_pending_question() or "").strip()
+        msg = (input.agent_chat_input() or "").strip()
+        if not sid or not q:
+            # Conversation starts after Generate; allow send as refinement even without a pending question.
+            if not sid:
+                ui.notification_show(ui.span("Use Generate first."), type="warning", session=session)
+                return
+        if not msg:
+            ui.notification_show(ui.span("Type a message before sending."), type="warning", session=session)
+            return
+        if int(chat_assistant_turns() or 0) >= 6:
+            ui.notification_show(ui.span("Turn cap reached for this session."), type="warning", session=session)
+            return
+        _append_chat("user", msg, includes_recs=False)
+        try:
+            arch = _architecture_for_plan_llm()
+            # Rebuild ctx + narrative from current inputs; keep additive.
+            wm = input.when_mode()
+            ws = input.when_season() if wm == "season" else None
+            wmth = input.when_month() if wm == "month" else None
+            ctx = build_trip_context(
+                {
+                    "dest_country": input.dest_country(),
+                    "dest_country_iso2": input.dest_country_iso2(),
+                    "dest_city": input.dest_city(),
+                    "cmp1_country": input.cmp1_country(),
+                    "cmp1_country_iso2": input.cmp1_country_iso2(),
+                    "cmp1_city": input.cmp1_city(),
+                    "cmp2_country": input.cmp2_country(),
+                    "cmp2_country_iso2": input.cmp2_country_iso2(),
+                    "cmp2_city": input.cmp2_city(),
+                    "when_mode": wm,
+                    "when_season": ws,
+                    "when_month": wmth,
+                    "like_tags": _as_tag_list(input.like_tags()),
+                    "dislike_tags": _as_tag_list(input.dislike_tags()),
+                    "dietary_tags": _as_tag_list(input.dietary_tags()),
+                    "food_like_text": input.food_like_text(),
+                    "food_dislike_text": input.food_dislike_text(),
+                    "dietary_restrictions_text": input.dietary_restrictions_text(),
+                }
+            )
+            # Refinements should behave like fresh requests but keep the original food profile
+            # captured at initial Generate for consistency across turns.
+            base_food = initial_food_state()
+            if isinstance(base_food, dict) and base_food:
+                merged_ctx = dict(ctx)
+                merged_ctx["food"] = dict(base_food)
+                ctx = merged_ctx
+            outside_loc = _requested_outside_guardrail_location(msg, ctx=ctx)
+            if outside_loc:
+                guard_msg = (
+                    f"I can’t switch to **{outside_loc}** from chat because location is a guardrail for this run. "
+                    "Please update the destination fields in the form and click **Generate recommendations** again."
+                )
+                agent_status_msg.set("Guardrail: refinement requested location outside current destination.")
+                _append_chat("assistant", guard_msg, includes_recs=False)
+                return
+            dest_label = ", ".join(
+                p
+                for p in (
+                    (input.dest_city() or "").strip(),
+                    (input.dest_country() or "").strip(),
+                )
+                if p
+            )
+            trip_food_narrative = preference_narrative_from_trip_food(ctx["food"])
+            pref_narrative = trip_food_narrative
+            budgets = LoopBudgets(min_llm_turns=2, max_llm_turns=6, max_retrieval_reruns=6)
+            exclude_titles: list[str] = []
+            area_refresh_requested = _is_new_area_refinement(msg)
+            if area_refresh_requested:
+                current_places = (((plan_state() or {}).get("dining") or {}).get("places") or [])
+                exclude_titles = [
+                    str(p.get("title") or "").strip()
+                    for p in current_places
+                    if isinstance(p, dict) and str(p.get("title") or "").strip()
+                ]
+            res = run_orchestrator_loop(
+                ctx=ctx,
+                architecture_md=arch,
+                destination_label=dest_label or (input.dest_country() or "").strip(),
+                preference_narrative=pref_narrative,
+                budgets=budgets,
+                # Fresh request behavior for each refinement (no prior-turn carry-over).
+                user_message=msg,
+                excluded_place_titles=exclude_titles,
+            )
+            agent_session_id.set(res.session_id)
+            if res.status == "needs_clarification":
+                agent_pending_question.set(res.question or "")
+                agent_status_msg.set("Waiting for your answer.")
+                _append_chat("assistant", res.question or "One quick question to improve the picks:", includes_recs=False)
+                return
+            if res.status != "final" or not res.plan:
+                raise RuntimeError(res.detail or "Orchestrator failed.")
+            parsed = dict(res.plan)
+            agent1_candidates = list(res.agent1_candidates or [])
+            ok_guard, guard_err = validate_plan_guardrails(
+                plan=parsed, ctx=ctx, agent1_candidates=agent1_candidates
+            )
+            if not ok_guard:
+                agent_status_msg.set(guard_err or "Guardrail blocked the recommendation.")
+                return
+            prev_titles = [str(p.get("title") or "").strip() for p in (((plan_state() or {}).get("dining") or {}).get("places") or [])[:3] if isinstance(p, dict)]
+            plan_state.set(parsed)
+            map_places_state.set(_markers_from_candidates(agent1_candidates))
+            ui.update_text("map_place_pick", value="0", session=session)
+            agent_pending_question.set("")
+            qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
+            fs = (qc_meta.get("final_scores") or {}) if isinstance(qc_meta, dict) else {}
+            loc_s = fs.get("location_likert")
+            diet_s = fs.get("dietary_likert")
+            qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
+            status_msg = f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
+            if area_refresh_requested and exclude_titles:
+                status_msg += " | Trying a different area and avoiding previous picks."
+            agent_status_msg.set(status_msg)
+            new_titles = [str(p.get("title") or "").strip() for p in (((parsed.get("dining") or {}).get("places")) or [])[:3] if isinstance(p, dict)]
+            m = msg.lower()
+            intent_refresh = any(x in m for x in ("dessert", "sweet", "cheaper", "budget", "different area", "another area", "near", "close to", "more like"))
+            includes = bool(intent_refresh or (new_titles and new_titles != prev_titles))
+            followup = _assistant_followup_message(ctx=ctx, user_message=msg, plan=parsed, cards_shown=includes)
+            _append_chat("assistant", followup, includes_recs=includes)
+            _maybe_save_durable_delta(msg=msg, ctx=ctx)
+            _maybe_generate_quick_replies(ctx=ctx, plan=parsed, last_user_message=msg)
+            ui.update_text("agent_chat_input", value="", session=session)
+        except Exception as e:
+            agent_status_msg.set(f"Send failed: {e}")
+
+    @render.ui
+    def agent_question_box():
+        q = (agent_pending_question() or "").strip()
+        if not q:
+            return ui.div()
+        return ui.div(
+            ui.div("Assistant question", class_="td-output-subhead"),
+            ui.p(q),
+            class_="td-card",
+        )
+
+    @render.ui
+    def agent_status_box():
+        # Debug/status surface used inside the status panel (not the chat column).
+        s = (agent_status_msg() or "").strip()
+        if not s:
+            return ui.div()
+        return ui.div(
+            ui.div("Status", class_="td-output-subhead"),
+            ui.tags.pre(s, class_="td-places-error-body"),
+            class_="td-places-error-banner",
+        )
+
+    @render.ui
+    def food_section_ui():
+        # Collapse-to-summary behavior after Generate; expand on user request.
+        if not food_collapsed():
+            return food_preference_combined_content()
+        wm = input.when_mode()
+        ws = input.when_season() if wm == "season" else None
+        wmth = input.when_month() if wm == "month" else None
+        ctx = build_trip_context(
+            {
+                "dest_country": input.dest_country(),
+                "dest_country_iso2": input.dest_country_iso2(),
+                "dest_city": input.dest_city(),
+                "cmp1_country": input.cmp1_country(),
+                "cmp1_country_iso2": input.cmp1_country_iso2(),
+                "cmp1_city": input.cmp1_city(),
+                "cmp2_country": input.cmp2_country(),
+                "cmp2_country_iso2": input.cmp2_country_iso2(),
+                "cmp2_city": input.cmp2_city(),
+                "when_mode": wm,
+                "when_season": ws,
+                "when_month": wmth,
+                "like_tags": _as_tag_list(input.like_tags()),
+                "dislike_tags": _as_tag_list(input.dislike_tags()),
+                "dietary_tags": _as_tag_list(input.dietary_tags()),
+                "food_like_text": input.food_like_text(),
+                "food_dislike_text": input.food_dislike_text(),
+                "dietary_restrictions_text": input.dietary_restrictions_text(),
+            }
+        )
+        return ui.div(
+            ui.div(
+                ui.p("Food preferences", class_="td-input-label td-food-row-title"),
+                ui.p(_food_summary_from_ctx(ctx), class_="td-muted"),
+                ui.input_action_button("btn_food_expand", "Edit food preferences", class_="btn td-btn-secondary"),
+                class_="td-food-preferences-header-with-note",
+            ),
+            class_="td-input-group td-food-combined",
+        )
+
+    @reactive.effect
+    @reactive.event(input.btn_food_expand)
+    def _expand_food():
+        food_collapsed.set(False)
+
+    def _chat_place_cards_ui(*, max_cards: int = 3) -> ui.Tag:
+        rows = _merge_places_rows(plan_state(), map_places_state())[:max_cards]
+        if not rows:
+            return ui.div()
+        blocks: list[ui.Tag] = []
+        for i, r in enumerate(rows):
+            blocks.append(
+                ui.div(
+                    ui.div(
+                        ui.div(
+                            ui.h4(r.get("title") or "—"),
+                            ui.span(
+                                _format_place_list_badge(
+                                    r.get("badge"),
+                                    rag_score=r.get("rag_match_score"),
+                                    price_tier=r.get("price_tier"),
+                                ),
+                                class_="td-dining-item-badge",
+                            ),
+                            class_="td-dining-item-title",
+                        ),
+                        ui.p(r.get("note") or "", class_="td-dining-item-note"),
+                        class_="td-dining-item td-dining-place-item",
+                    ),
+                    class_="td-agent-rec-card",
+                    **{"data-td-agent-rec-idx": str(i + 1)},
+                )
+            )
+        return ui.div(*blocks, class_="td-agent-rec-cards")
+
+    @render.ui
+    def chat_area_ui():
+        # Proper chat UI: context bar + bubbles + cards + quick reply pills + pinned input.
+        rows = list(chat_messages() or [])
+        if not rows:
+            return ui.div()
+
+        tags = _context_tags_for_ui()
+        ctx_parts: list[ui.Tag] = [ui.span("From your form:", class_="td-agent-ctx-label")]
+        for t in (tags.get("location") or []):
+            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
+        for t in (tags.get("dietary") or []):
+            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-diet"))
+        for t in (tags.get("like") or []):
+            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-like"))
+        for t in (tags.get("dislike") or []):
+            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-dislike"))
+        context_bar = ui.div(*ctx_parts, class_="td-agent-contextbar")
+
+        header = ui.div(
+            ui.div("FG", class_="td-chat-avatar"),
+            ui.div(
+                ui.div("Food guide", class_="td-chat-title"),
+                ui.div("Personalized dining help", class_="td-chat-subtitle"),
+                class_="td-chat-header-info",
+            ),
+            ui.tags.button("×", type="button", id="td-chat-close", class_="td-chat-close"),
+            class_="td-chat-widget-header",
+        )
+
+        # Find last assistant message index for chip placement
+        last_asst_idx = -1
+        for i, r in enumerate(rows):
+            if r.get("role") == "assistant":
+                last_asst_idx = i
+
+        bubbles: list[ui.Tag] = []
+        for i, r in enumerate(rows):
+            role = r.get("role")
+            is_user = role == "user"
+            row_cls = "td-chat-row td-chat-user" if is_user else "td-chat-row td-chat-agent"
+            bubble_cls = "td-chat-bubble td-chat-bubble-user" if is_user else "td-chat-bubble td-chat-bubble-agent"
+            content = ui.markdown(r.get("content") or "")
+
+            extra = ui.div()
+            if (not is_user) and bool(r.get("includes_recs")):
+                extra = ui.div(_chat_place_cards_ui(max_cards=3), class_="td-chat-bubble-extra")
+            if (not is_user) and i == last_asst_idx:
+                chips = list(quick_replies_state() or [])
+                chip_buttons = []
+                for c in chips:
+                    if not isinstance(c, dict):
+                        continue
+                    chip_buttons.append(
+                        ui.tags.button(
+                            str(c.get("label") or "Chip"),
+                            type="button",
+                            class_="td-chat-pill",
+                            **{"data-td-agent-chip": str(c.get("message") or "").strip()},
+                        )
+                    )
+                chip_row = ui.div(*chip_buttons, class_="td-chat-pill-row") if chip_buttons else ui.div()
+                notice = (saved_pref_notice() or "").strip()
+                save_notice_ui = ui.div(notice, class_="td-chat-save-notice") if notice else ui.div()
+                recs = _chat_place_cards_ui(max_cards=3) if bool(r.get("includes_recs")) else ui.div()
+                extra = ui.div(recs, chip_row, save_notice_ui, class_="td-chat-bubble-extra")
+
+            bubbles.append(ui.div(ui.div(content, extra, class_=bubble_cls), class_=row_cls))
+
+        return ui.div(
+            header,
+            context_bar,
+            ui.div(
+                ui.div(
+                    ui.span("Guardrails", class_="td-status-drawer-title"),
+                    ui.input_action_button(
+                        "btn_toggle_guardrails_drawer",
+                        ("Hide" if bool(status_panel_open()) else "Show"),
+                        class_="btn td-btn-secondary td-status-drawer-toggle",
+                    ),
+                    class_="td-status-drawer-header",
+                ),
+                ui.div(
+                    ui.output_ui("agent_guardrails_ui") if bool(status_panel_open()) else ui.div(),
+                    class_="td-status-drawer-body",
+                ),
+                class_="td-status-drawer",
+            ),
+            ui.div(*bubbles, class_="td-chat-messages"),
+            ui.div(
+                ui.input_text("agent_chat_input", None, value="", placeholder="Refine, ask follow-ups, or say 'done'…"),
+                ui.input_action_button("btn_agent_send", "Send", class_="btn td-btn-primary-mockup"),
+                class_="td-chat-inputbar",
+            ),
+            class_="td-chat-shell",
+        )
+
+    @reactive.effect
+    @reactive.event(input.agent_quick_reply)
+    def _chip_click():
+        msg = (input.agent_quick_reply() or "").strip()
+        if msg:
+            ui.update_text("agent_chat_input", value=msg, session=session)
+            # No toast: chips should feel instant and quiet.
+
+    @reactive.effect
+    @reactive.event(input.btn_toggle_qc_widget)
+    def _toggle_qc_widget():
+        qc_widget_open.set(not qc_widget_open())
+
+    @reactive.effect
+    @reactive.event(input.btn_toggle_guardrails_drawer)
+    def _toggle_guardrails_drawer():
+        status_panel_open.set(not bool(status_panel_open()))
+
+    @reactive.effect
+    @reactive.event(input.btn_new_location)
+    def _new_location():
+        # Clear destination fields only; keep saved preferences.
+        ui.update_text("dest_country", value="", session=session)
+        ui.update_text("dest_country_iso2", value="", session=session)
+        ui.update_text("dest_city", value="", session=session)
+        food_collapsed.set(False)
+        chat_messages.set([])
+        chat_assistant_turns.set(0)
+        quick_replies_state.set([])
+        agent_session_id.set("")
+        agent_status_msg.set("")
+        agent_pending_question.set("")
+        saved_pref_notice.set("")
+        initial_food_state.set(None)
+        ui.notification_show(ui.span("Pick a new destination, then Generate again."), type="message", duration=6, session=session)
+
+    @render.ui
+    def context_bar_ui():
+        tags = _context_tags_for_ui()
+        parts = [ui.span("From your form:", class_="td-agent-ctx-label")]
+        for t in tags.get("location") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
+        for t in tags.get("dietary") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-diet"))
+        for t in tags.get("like") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-like"))
+        for t in tags.get("dislike") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-dislike"))
+        return ui.div(*parts, class_="td-agent-contextbar")
+
+    @render.ui
+    def agent_status_panel_ui():
+        tags = _context_tags_for_ui()
+        # Preference match: average over top 3 place badges when possible.
+        rows = _merge_places_rows(plan_state(), map_places_state())
+        scores = []
+        for r in rows[:3]:
+            try:
+                sc = float(r.get("rag_match_score"))
+                if 0 <= sc <= 1:
+                    scores.append(sc)
+            except Exception:
+                pass
+        avg = round(sum(scores) / len(scores) * 100) if scores else None
+        match_line = f"{avg}% avg match (top 3)" if avg is not None else "Match: —"
+
+        # Guardrail traffic lights (green when armed; warnings if missing).
+        loc_ok = bool(tags.get("location"))
+        diet_list = tags.get("dietary") or []
+        guard_rows = [
+            ui.div(
+                ui.div(class_="td-agent-dot td-agent-dot-on" if loc_ok else "td-agent-dot td-agent-dot-warn"),
+                ui.span("Location filter", class_="td-agent-status-row-label"),
+                ui.span(", ".join(tags.get("location") or []) or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-traffic-row",
+            )
+        ]
+        for d in (diet_list or ["(none)"]):
+            guard_rows.append(
+                ui.div(
+                    ui.div(class_="td-agent-dot td-agent-dot-on"),
+                    ui.span("Dietary", class_="td-agent-status-row-label"),
+                    ui.span(str(d), class_="td-agent-status-row-value"),
+                    class_="td-agent-status-traffic-row",
+                )
+            )
+
+        guard = ui.div(
+            ui.div("Guardrails (blockers)", class_="td-agent-status-title"),
+            *guard_rows,
+            class_="td-agent-status-card",
+        )
+        def _pref_match_pct(label: str) -> str:
+            """
+            Lightweight per-preference match:
+            - base on avg top-3 rag score when available
+            - add small bonus if the label text appears in any of the top-3 place docs
+            """
+            base = avg if avg is not None else None
+            if base is None:
+                return "—"
+            lab = (label or "").strip().lower()
+            bonus = 0
+            if lab:
+                for r in rows[:3]:
+                    blob = " ".join(
+                        str(r.get(k) or "")
+                        for k in ("title", "note", "address")
+                    ).lower()
+                    if lab in blob:
+                        bonus = 6
+                        break
+            return f"{min(100, int(base) + bonus)}%"
+
+        prefs = ui.div(
+            ui.div("Preferences", class_="td-agent-status-title"),
+            ui.div(match_line, class_="td-agent-status-row"),
+            ui.div(
+                *[
+                    ui.div(
+                        ui.span(x, class_="td-agent-status-row-label"),
+                        ui.span(_pref_match_pct(x), class_="td-agent-status-row-value"),
+                        class_="td-agent-status-match-row",
+                    )
+                    for x in (tags.get("like") or [])
+                ],
+                class_="td-agent-status-group",
+            )
+            if (tags.get("like") or [])
+            else ui.div(ui.span("Likes"), ui.span("—"), class_="td-agent-status-row"),
+            ui.div(
+                *[
+                    ui.div(
+                        ui.span("Avoid: " + x, class_="td-agent-status-row-label"),
+                        ui.span(_pref_match_pct(x), class_="td-agent-status-row-value"),
+                        class_="td-agent-status-match-row",
+                    )
+                    for x in (tags.get("dislike") or [])
+                ],
+                class_="td-agent-status-group",
+            )
+            if (tags.get("dislike") or [])
+            else ui.div(ui.span("Dislikes"), ui.span("—"), class_="td-agent-status-row"),
+            class_="td-agent-status-card",
+        )
+        conv = ui.div(
+            ui.div("Conversation state", class_="td-agent-status-title"),
+            ui.div(f"Round {int(chat_assistant_turns() or 0)} of refinement", class_="td-agent-status-row"),
+            ui.div("Awaiting user input" if (int(chat_assistant_turns() or 0) >= 1) else "Ready after Generate", class_="td-agent-status-row"),
+            ui.div(f"Turns remaining: {max(0, 6 - int(chat_assistant_turns() or 0))}", class_="td-agent-status-row"),
+            class_="td-agent-status-card",
+        )
+        qc = (((plan_state() or {}).get("_meta") or {}).get("agent4_qc") or {})
+        if not isinstance(qc, dict):
+            qc = {}
+        meta = ((plan_state() or {}).get("_meta") or {})
+        if not isinstance(meta, dict):
+            meta = {}
+        ini = qc.get("initial_scores") or {}
+        fin = qc.get("final_scores") or {}
+        val = qc.get("validation_results") or {}
+        err = qc.get("error_rates") or {}
+        qc_detail = str(qc.get("detail") or "").strip()
+        try:
+            elapsed_ms = int(meta.get("elapsed_ms") or 0)
+        except Exception:
+            elapsed_ms = 0
+        try:
+            llm_turns = int(meta.get("llm_turns_used") or 0)
+        except Exception:
+            llm_turns = 0
+        latency_label = "—"
+        if elapsed_ms > 0:
+            if llm_turns > 0:
+                latency_label = f"{elapsed_ms} ms total (~{round(elapsed_ms / max(1, llm_turns))} ms / LLM turn)"
+            else:
+                latency_label = f"{elapsed_ms} ms total"
+        qc_card = ui.div(
+            ui.div("QC Evidence", class_="td-agent-status-title"),
+            ui.div(
+                ui.span("Before -> After", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"Location {ini.get('location_likert', '—')} -> {fin.get('location_likert', '—')}; "
+                    f"Dietary {ini.get('dietary_likert', '—')} -> {fin.get('dietary_likert', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Validation", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={val.get('location_correct', '—')} | dietary={val.get('dietary_correct', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Error rates", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={err.get('location', '—')} | dietary={err.get('dietary', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC loop", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"{qc.get('turns_used', 0)}/{qc.get('max_turns', 3)} turns | all_5={qc.get('all_five', False)}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Latency", class_="td-agent-status-row-label"),
+                ui.span(latency_label, class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC detail", class_="td-agent-status-row-label"),
+                ui.span(qc_detail or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            class_="td-agent-status-card",
+        )
+        return ui.div(
+            guard,
+            prefs,
+            qc_card,
+            conv,
+            ui.output_ui("agent_status_box"),
+            class_="td-agent-status-body",
+        )
+
+    @render.ui
+    def agent_guardrails_ui():
+        tags = _context_tags_for_ui()
+        loc_ok = bool(tags.get("location"))
+        diet_list = tags.get("dietary") or []
+        guard_rows = [
+            ui.div(
+                ui.span("✓" if loc_ok else "!", class_="td-agent-check td-agent-check-on" if loc_ok else "td-agent-check td-agent-check-warn"),
+                ui.span("Location filter", class_="td-agent-status-row-label"),
+                ui.span(", ".join(tags.get("location") or []) or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-traffic-row",
+            )
+        ]
+        for d in (diet_list or ["(none)"]):
+            guard_rows.append(
+                ui.div(
+                    ui.span("✓", class_="td-agent-check td-agent-check-on"),
+                    ui.span("Dietary", class_="td-agent-status-row-label"),
+                    ui.span(str(d), class_="td-agent-status-row-value"),
+                    class_="td-agent-status-traffic-row",
+                )
+            )
+        return ui.div(
+            ui.div(
+                ui.div("Guardrails (blockers)", class_="td-agent-status-title"),
+                *guard_rows,
+                class_="td-agent-status-card",
+            ),
+            class_="td-agent-status-body",
+        )
+
+    @render.ui
+    def qc_widget_ui():
+        qc = (((plan_state() or {}).get("_meta") or {}).get("agent4_qc") or {})
+        if not isinstance(qc, dict):
+            qc = {}
+        meta = ((plan_state() or {}).get("_meta") or {})
+        if not isinstance(meta, dict):
+            meta = {}
+        ini = qc.get("initial_scores") or {}
+        fin = qc.get("final_scores") or {}
+        val = qc.get("validation_results") or {}
+        err = qc.get("error_rates") or {}
+        qc_detail = str(qc.get("detail") or "").strip()
+        try:
+            elapsed_ms = int(meta.get("elapsed_ms") or 0)
+        except Exception:
+            elapsed_ms = 0
+        try:
+            llm_turns = int(meta.get("llm_turns_used") or 0)
+        except Exception:
+            llm_turns = 0
+        latency_label = "—"
+        if elapsed_ms > 0:
+            if llm_turns > 0:
+                latency_label = f"{elapsed_ms} ms total (~{round(elapsed_ms / max(1, llm_turns))} ms / LLM turn)"
+            else:
+                latency_label = f"{elapsed_ms} ms total"
+        qc_card = ui.div(
+            ui.div("QC Evidence", class_="td-agent-status-title"),
+            ui.div(
+                ui.span("Before -> After", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"Location {ini.get('location_likert', '—')} -> {fin.get('location_likert', '—')}; "
+                    f"Dietary {ini.get('dietary_likert', '—')} -> {fin.get('dietary_likert', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Validation", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={val.get('location_correct', '—')} | dietary={val.get('dietary_correct', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Error rates", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"location={err.get('location', '—')} | dietary={err.get('dietary', '—')}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC loop", class_="td-agent-status-row-label"),
+                ui.span(
+                    f"{qc.get('turns_used', 0)}/{qc.get('max_turns', 3)} turns | all_5={qc.get('all_five', False)}",
+                    class_="td-agent-status-row-value",
+                ),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("Latency", class_="td-agent-status-row-label"),
+                ui.span(latency_label, class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            ui.div(
+                ui.span("QC detail", class_="td-agent-status-row-label"),
+                ui.span(qc_detail or "—", class_="td-agent-status-row-value"),
+                class_="td-agent-status-match-row",
+            ),
+            class_="td-agent-status-card",
+        )
+
+        is_open = bool(qc_widget_open())
+        toggle_label = "Hide" if is_open else "Show"
+        return ui.div(
+            ui.div(
+                ui.span("QC Evidence", class_="td-status-drawer-title"),
+                ui.input_action_button(
+                    "btn_toggle_qc_widget",
+                    toggle_label,
+                    class_="btn td-btn-secondary td-status-drawer-toggle",
+                ),
+                class_="td-status-drawer-header",
+            ),
+            ui.div(
+                ui.div(qc_card, class_="td-agent-status-body") if is_open else ui.div(),
+                class_="td-status-drawer-body",
+            ),
+            class_="td-qc-widget" + (" td-qc-widget-open" if is_open else ""),
+        )
 
     @render.ui
     def out_friendliness():

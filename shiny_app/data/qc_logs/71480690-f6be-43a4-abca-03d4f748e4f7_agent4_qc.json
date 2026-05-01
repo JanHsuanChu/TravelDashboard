@@ -1,0 +1,74 @@
+{
+  "session_id": "71480690-f6be-43a4-abca-03d4f748e4f7",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.531",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5309,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.531"
+      },
+      "agent2_compact_summary": "places=The Capital Grille, RockCreek Seafood & Spirits, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Dungeness crab bisque, Pan‑seared Wild Salmon, Geoduck clams sautéed with garlic, Smoked salmon and cream cheese bagel, Seafood tower with oysters, clams, and ",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All location and dietary requirements met with accurate recommendations.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5314,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.531"
+      },
+      "agent2_compact_summary": "places=The Capital Grille, RockCreek Seafood & Spirits, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Dungeness crab bisque, Pan‑seared Wild Salmon, Geoduck clams sautéed with garlic, Smoked salmon and cream cheese bagel, Seafood tower with oysters, clams, and ",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 listed premium Seattle seafood spots, matched criteria, no errors. Dishes suitable, no caffeinated items included; compliance good.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5326,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.533"
+      },
+      "agent2_compact_summary": "places=The Capital Grille, RockCreek Seafood & Spirits, East Anchor Seafood, Chinook's At Salmon Bay, Local Tide; dishes=Dungeness crab bisque, Pan‑seared Wild Salmon, Geoduck clams sautéed with garlic, Smoked salmon and cream cheese bagel, Seafood tower with oysters, clams, and ",
+      "qc_turn": 3
+    }
+  ]
+}

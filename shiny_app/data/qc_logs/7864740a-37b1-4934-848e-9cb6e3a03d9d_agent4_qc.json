@@ -1,0 +1,74 @@
+{
+  "session_id": "7864740a-37b1-4934-848e-9cb6e3a03d9d",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All listed spots authentic Seattle seafood; café and drinks are non‑caffeinated, meeting restriction.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.4966,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.497"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, Seattle Fish Guys, The Crab Pot Seattle, RockCreek Seafood & Spirits, Six Seven Restaurant; dishes=Fish and chips, Ahi poke bowl, Grilled halibut, Herbed roasted salmon, Seattle clam chowder",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Seattle Fish Company and The Capital Grille offer excellent seafood, avoiding caffeine. List includes fish & chips, ahi poke, grilled halibut, seafood tower, clam chowder.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5093,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.509"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, The Capital Grille, The Crab Pot Seattle; dishes=Fish and chips, Ahi poke bowl, Grilled halibut, Seafood tower, Seattle clam chowder",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Location verified with no errors; dietary compliance confirmed. Recommendations conform to Seattle seafood focus and avoid caffeinated food/drinks. Rounded compliance score shows solid alignment with user constraints.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5094,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.509"
+      },
+      "agent2_compact_summary": "places=Seattle Fish Company, The Fisherman's Restaurant Seattle, Seattle Fish Guys, Duke's Seafood South Lake Union, The Crab Pot Seattle; dishes=Fish and chips, Ahi poke bowl, Grilled halibut, Seafood tower, Herbed roasted salmon",
+      "qc_turn": 3
+    }
+  ]
+}

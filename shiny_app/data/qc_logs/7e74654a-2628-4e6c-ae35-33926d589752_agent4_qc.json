@@ -1,0 +1,28 @@
+{
+  "session_id": "7e74654a-2628-4e6c-ae35-33926d589752",
+  "turns": [
+    {
+      "location_likert": 5,
+      "dietary_likert": 5,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "All four items match location and dietary criteria as indicated by deterministic QC.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 5,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 4,
+        "dietary_errors": 0,
+        "dietary_total": 4,
+        "avg_rag_match_score": 0.5776,
+        "details": "location=0/4 errors; dietary=0/4 errors; matched_rag_avg=0.578"
+      },
+      "agent2_compact_summary": "places=Fish! Borough Market Restaurant, Hawksmoor Air Street, Hobson`s Fish & Chips soho, North Sea Fish Restaurant; dishes=Jackfruit taco bites with avocado salsa, Gluten‑free falafel wrap with tahini, Battered cauliflower bites with herb sauce, Herb‑infused polenta bites with l",
+      "qc_turn": 1
+    }
+  ]
+}

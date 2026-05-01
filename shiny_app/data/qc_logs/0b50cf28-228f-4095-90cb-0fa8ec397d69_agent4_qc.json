@@ -1,0 +1,74 @@
+{
+  "session_id": "0b50cf28-228f-4095-90cb-0fa8ec397d69",
+  "turns": [
+    {
+      "location_likert": 3,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent2 lists two correct NY locations, meets dietary needs, scores rating per QC.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 3,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 2,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5792,
+        "details": "location=0/2 errors; dietary=0/0 errors; matched_rag_avg=0.579"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar; dishes=Raw oysters on the half shell, Clam stew, Assorted oysters (6 pcs), Charred rockfish with citrus glaze",
+      "qc_turn": 1
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 accurately identified NYC seafood venues and listed caffeine‑free dishes, meeting dietary restrictions and location criteria precisely.",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5014,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.501"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar, 1803 NYC, Crab House Times Square, Fulton Fish Co.; dishes=Raw oysters on the half shell, Clam chowder, Grilled rockfish with citrus glaze, Cajun‑Creole jambalaya, Lobster roll (cold)",
+      "qc_turn": 2
+    },
+    {
+      "location_likert": 5,
+      "dietary_likert": 4,
+      "location_correct": true,
+      "dietary_correct": true,
+      "details": "Agent 2 correctly identified NYC fish spots and dishes, respecting caffeine restriction by choosing non-caffeinated items. No errors in location or dietary matches. Overall rating high, slight margin left for dietary nua",
+      "deterministic": {
+        "location_correct": true,
+        "dietary_correct": true,
+        "location_likert": 5,
+        "dietary_likert": 4,
+        "location_error_rate": 0.0,
+        "dietary_error_rate": 0.0,
+        "location_errors": 0,
+        "location_total": 5,
+        "dietary_errors": 0,
+        "dietary_total": 0,
+        "avg_rag_match_score": 0.5001,
+        "details": "location=0/5 errors; dietary=0/0 errors; matched_rag_avg=0.5"
+      },
+      "agent2_compact_summary": "places=Fish Market, Crave Fishbar, 1803 NYC, Crab House Times Square, Fulton Fish Co.; dishes=Shucked oysters (3 pcs), Clam chowder, Grilled rockfish with lemon butter, Cajun‑Creole jambalaya, All‑you‑can‑eat seafood buffet",
+      "qc_turn": 3
+    }
+  ]
+}
