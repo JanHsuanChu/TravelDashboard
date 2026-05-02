@@ -133,11 +133,12 @@ flowchart TB
 
     Orchestrator --> Agent2
     Agent1 -->|"ranked candidates"| Agent2
+    Agent2 -->|"plan JSON\n(validate / QC / repair)"| Orchestrator
 
     Orchestrator --> FriendlinessPipe
     FriendlinessPipe --> MacroData
 
-    Agent2 -->|"plan JSON"| Output
+    Agent2 -->|"plan JSON\n(dining + essential)"| Output
     FriendlinessPipe -->|"scores + report"| Output
     Orchestrator -->|"guardrailed + finalized"| Output
 
@@ -152,6 +153,8 @@ flowchart TB
     style FriendlinessPipe fill:#f4d7d7
     style Output fill:#f4d7d7
 ```
+
+**How the app actually wires this:** Agent 2 only returns JSON **inside** `run_orchestrator_loop` (`shiny_app/agent_loop.py`); the Shiny server applies dining + essential to the UI **after** the loop returns `status == "final"` and passes an extra `validate_plan_guardrails` in `server.py`. So the diagram shows both the **control loop** (Agent 2 → Orchestrator) and the **content** that populates dining/essential (plan JSON), which is authored by Agent 2 and **published** once the orchestrator accepts it.
 
 ---
 
