@@ -16,3 +16,6 @@ shiny_app/.venv/
 
 # rsconnect-python (Posit Connect deploy metadata)
 rsconnect-python/
+
+# poster
+poster/

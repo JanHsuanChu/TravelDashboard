@@ -144,8 +144,31 @@ _FOOD_QUERY_STOPWORDS = frozenset(
     about their they them when where what which who how than then only
     into over such both each few other same such than too can could would
     should good great really nice best favorite favourite
+    different another please restaurant restaurants place places picks pick
+    sets set spots spot suggestions suggestion option options venues venue
+    show give find looking try kinda sorta pretty really
     """.split()
 )
+
+
+def _sanitize_chat_refinement_for_search(raw: str, *, max_len: int = 140) -> str:
+    """
+    Normalize free-text Food Guide input for Places text queries and embedding prefix.
+    Strips polite lead-ins only; truncation keeps queries within Google's practical limits.
+    """
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(
+        r"^(please|could you|can you|i'?d like to|i want to|looking for|find me|show me|give me|want me to)\s+",
+        "",
+        s,
+        flags=re.I,
+    ).strip()
+    if len(s) > max_len:
+        s = s[: max_len - 1].rsplit(" ", 1)[0].strip()
+    return s
 
 
 def _segment_after_prefix(narrative: str, start: str, end_markers: tuple[str, ...]) -> str:
@@ -198,9 +221,12 @@ def _likes_search_query_fragment(narrative: str) -> str:
     return one_line
 
 
-def _preference_keyword_tokens(narrative: str) -> list[str]:
+def _preference_keyword_tokens(narrative: str, *, extra_blurb: str | None = None) -> list[str]:
     """Tokens from likes text for light lexical re-ranking (embedding stays primary)."""
     blob = _extract_likes_phrase(narrative)
+    ex = (extra_blurb or "").strip()
+    if ex:
+        blob = f"{blob} {ex}".strip() if blob else ex
     if not blob:
         return []
     seen: set[str] = set()
@@ -310,6 +336,7 @@ def run_agent1_places_rag(
     *,
     destination_label: str,
     preference_narrative: str,
+    chat_refinement: str | None = None,
     api_key: str | None = None,
     learned_weights: dict[str, Any] | None = None,
     top_k: int = 5,
@@ -319,11 +346,19 @@ def run_agent1_places_rag(
     Retrieve restaurant Places, rank by embedding similarity to preference + destination (RAG retrieval).
     Uses Google Text Search with the destination plus, when present, dish/cuisine hints from "Food I like"
     free text and tags — not only the generic query "restaurants in {dest}".
+    When Food Guide sends `chat_refinement`, it is prefixed on the semantic query and used for an extra Text Search.
     Returns (candidates_for_agent2, error_message_or_none).
     """
     pref = (preference_narrative or "").strip()
     dest = (destination_label or "").strip()
-    query = f"{pref} Looking for restaurants in {dest}." if pref else f"Restaurants matching traveler tastes in {dest}."
+    ref_hint = _sanitize_chat_refinement_for_search((chat_refinement or "").strip())
+    core = (
+        f"{pref} Looking for restaurants in {dest}."
+        if pref
+        else f"Restaurants matching traveler tastes in {dest}."
+    )
+    # Lead with refinement so embeddings and lexical boosts weight the user's latest instruction.
+    query = f"{ref_hint}. {core}" if ref_hint else core
 
     like_fragment = _likes_search_query_fragment(pref)
     text_queries: list[str] = [f"restaurants in {dest}"]
@@ -333,6 +368,12 @@ def run_agent1_places_rag(
             dish_q = dish_q[: _PLACES_TEXT_QUERY_MAX - 1].rsplit(" ", 1)[0].strip()
         if dish_q and dish_q != text_queries[0]:
             text_queries.append(dish_q)
+    if ref_hint:
+        ref_q = f"{ref_hint} {dest}".strip()
+        if len(ref_q) > _PLACES_TEXT_QUERY_MAX:
+            ref_q = ref_q[: _PLACES_TEXT_QUERY_MAX - 1].rsplit(" ", 1)[0].strip()
+        if ref_q and ref_q.lower() not in {t.lower() for t in text_queries}:
+            text_queries.append(ref_q)
 
     batches: list[list[dict[str, Any]]] = []
     search_err: str | None = None
@@ -374,7 +415,7 @@ def run_agent1_places_rag(
     except Exception as e:
         return [], f"Embedding model (sentence-transformers) failed: {e}"
 
-    kw_tokens = _preference_keyword_tokens(pref)
+    kw_tokens = _preference_keyword_tokens(pref, extra_blurb=ref_hint or None)
     if kw_tokens:
         boosts = np.array([_keyword_hit_count(docs[i], kw_tokens) for i in range(len(docs))], dtype=np.float64)
         scores = scores + np.minimum(_KEYWORD_BOOST_CAP, boosts * _KEYWORD_BOOST_PER_HIT)

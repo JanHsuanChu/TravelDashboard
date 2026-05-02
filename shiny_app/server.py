@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import os
 import re
@@ -558,11 +559,15 @@ def server(input, output, session):
         if role == "assistant":
             chat_assistant_turns.set(int(chat_assistant_turns() or 0) + 1)
 
-    def _is_new_area_refinement(msg: str) -> bool:
+    def _requests_fresh_restaurant_list(msg: str) -> bool:
+        """
+        True when the Food guide message asks for replacement dining picks while staying on the trip.
+        Enables excluding current dining.place titles before Agent 1 and widens retrieval top_k.
+        """
         m = (msg or "").strip().lower()
         if not m:
             return False
-        cues = (
+        area_geo_cues = (
             "another district",
             "different district",
             "another area",
@@ -572,7 +577,80 @@ def server(input, output, session):
             "somewhere else",
             "elsewhere",
         )
-        return any(c in m for c in cues)
+        alternative_cues = (
+            "different restaurant",
+            "different restaurants",
+            "other restaurant",
+            "other restaurants",
+            "another restaurant",
+            "different place",
+            "different places",
+            "other place",
+            "other places",
+            "new place",
+            "new places",
+            "another set",
+            "different set",
+            "different sets",
+            "other set",
+            "different picks",
+            "new picks",
+            "fresh picks",
+            "different spots",
+            "other spots",
+            "not those",
+            "not these",
+            "skip these",
+            "skip those",
+            "avoid these",
+            "avoid those",
+            "don't want these",
+            "dont want these",
+            "something different",
+            "try something different",
+            "try different",
+            "show me others",
+            "give me others",
+            "alternative restaurant",
+            "other options",
+            "different options",
+            "different suggestions",
+            "other suggestions",
+            "swap restaurant",
+            "change restaurant",
+            "replace restaurant",
+            "find different",
+            "another round",
+            "redo dining",
+            "refresh dining",
+            "refresh restaurants",
+            "more restaurants",
+            "different venue",
+            "different venues",
+            "different recommendation",
+            "different recommendations",
+            "other recommendation",
+            "other recommendations",
+            "new recommendation",
+            "new recommendations",
+            "another recommendation",
+            "more recommendation",
+            "more recommendations",
+        )
+        return any(c in m for c in area_geo_cues) or any(c in m for c in alternative_cues)
+
+    def _implies_recommendation_refresh_ui(msg: str) -> bool:
+        """Broad phrasing → show refreshed place cards; also pairs (different|…) + recommend."""
+        if _requests_fresh_restaurant_list(msg):
+            return True
+        m = (msg or "").strip().lower()
+        if not m:
+            return False
+        if "recommend" in m:
+            for head in ("different", "other", "another", "new", "more", "alternative", "additional", "fresh"):
+                if head in m:
+                    return True
+        return False
 
     def _requested_outside_guardrail_location(msg: str, *, ctx: dict) -> str | None:
         """
@@ -768,6 +846,8 @@ def server(input, output, session):
             "- Do NOT re-ask location, timing, dietary restrictions, or dislikes.\n"
             "- If you need more info, ask at most ONE clarifying question.\n"
             "- If recommendations were refreshed, say so briefly.\n"
+            "- Name ONLY venues that appear verbatim in Top places below; NEVER invent restaurants or neighborhoods.\n"
+            "- If the list overlaps prior picks, acknowledge that plainly instead of implying new venues.\n"
             "- No bullet lists.\n"
         )
         user = (
@@ -1196,8 +1276,8 @@ def server(input, output, session):
                         summary_advisory,
                     )
                     parsed["essential"] = ess
-                    plan_state.set(parsed)
-                    map_places_state.set(_markers_from_candidates(agent1_candidates))
+                    plan_state.set(copy.deepcopy(parsed))
+                    map_places_state.set(copy.deepcopy(_markers_from_candidates(agent1_candidates)))
                     ui.update_text("map_place_pick", value="0", session=session)
                     agent_pending_question.set("")
                     qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
@@ -1439,8 +1519,8 @@ def server(input, output, session):
             pref_narrative = trip_food_narrative
             budgets = LoopBudgets(min_llm_turns=2, max_llm_turns=6, max_retrieval_reruns=6)
             exclude_titles: list[str] = []
-            area_refresh_requested = _is_new_area_refinement(msg)
-            if area_refresh_requested:
+            fresh_list_requested = _requests_fresh_restaurant_list(msg)
+            if fresh_list_requested:
                 current_places = (((plan_state() or {}).get("dining") or {}).get("places") or [])
                 exclude_titles = [
                     str(p.get("title") or "").strip()
@@ -1474,8 +1554,8 @@ def server(input, output, session):
                 agent_status_msg.set(guard_err or "Guardrail blocked the recommendation.")
                 return
             prev_titles = [str(p.get("title") or "").strip() for p in (((plan_state() or {}).get("dining") or {}).get("places") or [])[:3] if isinstance(p, dict)]
-            plan_state.set(parsed)
-            map_places_state.set(_markers_from_candidates(agent1_candidates))
+            plan_state.set(copy.deepcopy(parsed))
+            map_places_state.set(copy.deepcopy(_markers_from_candidates(agent1_candidates)))
             ui.update_text("map_place_pick", value="0", session=session)
             agent_pending_question.set("")
             qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
@@ -1484,13 +1564,28 @@ def server(input, output, session):
             diet_s = fs.get("dietary_likert")
             qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
             status_msg = f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
-            if area_refresh_requested and exclude_titles:
-                status_msg += " | Trying a different area and avoiding previous picks."
+            if fresh_list_requested and exclude_titles:
+                status_msg += " | Refreshing picks (excluding previous venues)."
             agent_status_msg.set(status_msg)
             new_titles = [str(p.get("title") or "").strip() for p in (((parsed.get("dining") or {}).get("places")) or [])[:3] if isinstance(p, dict)]
             m = msg.lower()
-            intent_refresh = any(x in m for x in ("dessert", "sweet", "cheaper", "budget", "different area", "another area", "near", "close to", "more like"))
-            includes = bool(intent_refresh or (new_titles and new_titles != prev_titles))
+            intent_refresh = (
+                fresh_list_requested
+                or _implies_recommendation_refresh_ui(msg)
+                or any(
+                    x in m
+                    for x in (
+                        "dessert",
+                        "sweet",
+                        "cheaper",
+                        "budget",
+                        "near",
+                        "close to",
+                        "more like",
+                    )
+                )
+            )
+            includes = bool(intent_refresh or prev_titles != new_titles)
             followup = _assistant_followup_message(ctx=ctx, user_message=msg, plan=parsed, cards_shown=includes)
             _append_chat("assistant", followup, includes_recs=includes)
             _maybe_save_durable_delta(msg=msg, ctx=ctx)
@@ -1498,6 +1593,23 @@ def server(input, output, session):
             ui.update_text("agent_chat_input", value="", session=session)
         except Exception as e:
             agent_status_msg.set(f"Send failed: {e}")
+
+    @render.ui
+    def when_timing_detail():
+        """Server-side toggle: avoids unreliable ui.panel_conditional with layout_columns."""
+        if input.when_mode() == "month":
+            return ui.input_select(
+                "when_month",
+                "Month",
+                choices=tagdata.MONTH_CHOICES,
+                selected="6",
+            )
+        return ui.input_select(
+            "when_season",
+            "Season",
+            choices=tagdata.SEASON_CHOICES,
+            selected="summer",
+        )
 
     @render.ui
     def agent_question_box():
@@ -1600,6 +1712,9 @@ def server(input, output, session):
     @render.ui
     def chat_area_ui():
         # Proper chat UI: context bar + bubbles + cards + quick reply pills + pinned input.
+        _ps = plan_state()
+        _mp = map_places_state()
+
         rows = list(chat_messages() or [])
         if not rows:
             return ui.div()

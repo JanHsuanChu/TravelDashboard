@@ -15,24 +15,7 @@ def when_fields_content():
             selected="season",
             inline=True,
         ),
-        ui.panel_conditional(
-            "input.when_mode === 'season'",
-            ui.input_select(
-                "when_season",
-                "Season",
-                choices=tagdata.SEASON_CHOICES,
-                selected="summer",
-            ),
-        ),
-        ui.panel_conditional(
-            "input.when_mode === 'month'",
-            ui.input_select(
-                "when_month",
-                "Month",
-                choices=tagdata.MONTH_CHOICES,
-                selected="6",
-            ),
-        ),
+        ui.output_ui("when_timing_detail"),
         class_="td-input-group",
     )
 
@@ -48,23 +31,6 @@ def when_fields_ui():
             selected="season",
             inline=True,
         ),
-        ui.panel_conditional(
-            "input.when_mode === 'season'",
-            ui.input_select(
-                "when_season",
-                "Season",
-                choices=tagdata.SEASON_CHOICES,
-                selected="summer",
-            ),
-        ),
-        ui.panel_conditional(
-            "input.when_mode === 'month'",
-            ui.input_select(
-                "when_month",
-                "Month",
-                choices=tagdata.MONTH_CHOICES,
-                selected="6",
-            ),
-        ),
+        ui.output_ui("when_timing_detail"),
         class_="td-card",
     )

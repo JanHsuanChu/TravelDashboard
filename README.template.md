@@ -43,7 +43,7 @@ git push -u origin main
 - **Dining — recommended places** — When **Google Places** is configured, the app runs **Agent 1**: real restaurants from **Text Search**, ranked with **embedding similarity** (sentence-transformers) to the user’s preferences, then **Agent 2** (Ollama) writes place notes using that list. Each place shows **retrieval match %** (from RAG scores) and **Google price level** as **`$` / `$$` / `$$$`** when the API returns it. A **Google Map** (Embed API) shows the selected venue.
 - **Essential info** — **Travel advisory** uses live U.S. State Department table data plus a short **auxiliary-model** summary; **weather** still comes from the **Agent 2** plan JSON (illustrative unless you add a live feed).
 - **Travel friendliness** — **World Bank**–based scores and HTML report shell in [`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/); numeric scores are **not** from the LLM. Optional **auxiliary-model** prose fills report Purpose/Recommendations when enabled.
-- **Food Guide (chat refinement assistant)** — A floating chat widget opens after Generate and helps users refine dining picks without re-entering form data. It uses form context (location, dietary, likes/dislikes), supports quick-reply chips, and can refresh recommendations in bounded turns.
+- **Food Guide (chat refinement assistant)** — A floating chat opens after Generate. Each Send can rerun the **orchestrator** (Agent 1 + Agent 2 + guardrails + QC budget). The typed line is wired into Agent 1 as **`chat_refinement`** (stronger embeddings + optional extra Places query). Messages that ask for **different / alternative recommendations** exclude the current **`dining.places` names** server-side before reranking. The finalized JSON and Places markers update **both** **Dining — recommended places** and in-chat recommendation cards. Quick replies and short follow-up prose use the auxiliary (**OTHER**) model; they must align with grounded place names when cards are shown.
 - **Guardrails (hard safety constraints)** — Server-side validation enforces destination and dietary constraints before recommendations are accepted. If a result violates guardrails, the orchestrator repairs/retries instead of showing non-compliant output.
 - **QC Evidence (quality transparency panel)** — A user-visible panel summarizes QC Agent checks (initial/final scores, validation results, error rates, QC turns, latency). It is evidence from the same orchestrator run, not a separate recommendation flow.
 
@@ -66,10 +66,10 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 |------------|--------|--------|
 | **Preference storage** | Implemented | Food likes/dislikes/dietary tags and text; segment users via `food_tags` JSONB. |
 | **Generate recommendations** | Implemented | **Agent 2** Ollama call for plan JSON (parallel with advisory table fetch); optional **auxiliary** calls for advisory summary + friendliness report prose; optional Places-backed list for Agent 2. |
-| **Food Guide chat** | Implemented | In-app post-Generate refinement loop with quick replies, context carry-forward from form inputs, and bounded follow-up turns. |
+| **Food Guide chat** | Implemented | Post-Generate Send reruns orchestrator; refinement steers Places/RAG (`chat_refinement`); alternative-intent excludes prior picks; Dining + chat share one `plan_state` / markers after success (see **`docs/architecture_v3.md`**). |
 | **Guardrails (dietary + location)** | Implemented | Blocks non-compliant outputs and triggers orchestrator repair/retry so users only see destination- and dietary-safe recommendations. |
 | **QC Evidence** | Implemented | Exposes QC Agent metrics (scores, validation, error rates, turns, latency) so users can inspect recommendation quality signals. |
-| **Architecture context in the prompt** | Implemented | `docs/architecture.md` is injected into the system message. |
+| **Architecture context in the prompt** | Implemented | `docs/architecture.md` is injected into Agent 2’s system bundle (diagrams/process narrative lives in **`docs/architecture_v3.md`** → generated README sections). |
 | **Agent 1 — Places + embedding RAG** | Implemented (optional) | Live restaurant candidates, semantic ranking, preference-aware search queries; details include `priceLevel` and review snippets for the LLM. |
 | **Agent 2 — Dining copy** | Implemented | Structured dishes (`$`/`$$`/`$$$`) and places aligned to Agent 1 names when available. |
 | **Full multi-agent orchestration** | Partial / evolving | Two-stage dining pipeline today; broader tool calling and review corpora remain roadmap (see target diagram). |
@@ -95,7 +95,7 @@ The content below is **generated** from [`docs/architecture_v3.md`](docs/archite
 | **`validators`** ([`shiny_app/validators.py`](shiny_app/validators.py)) | Food text, when-mode (season/month), and email shape checks for Save / Generate. |
 | **`plan_logic`** ([`shiny_app/plan_logic.py`](shiny_app/plan_logic.py)) | `build_trip_context`, user/system JSON instructions (dietary rules, dish `$`/`$$`/`$$$`, place alignment to Agent 1). |
 | **`agent_loop`** ([`shiny_app/agent_loop.py`](shiny_app/agent_loop.py)) | Bounded orchestration: Agent 1 retrieval retries, Agent 2 JSON repair loop, hard guardrail validation, and QC Agent evidence loop. |
-| **`restaurant_rag`** ([`shiny_app/restaurant_rag.py`](shiny_app/restaurant_rag.py)) | Preference narrative → Places search (generic + food-hint query), embed query and place blurbs, cosine rank, Place Details, `price_tier` + `rag_match_score` on candidates. |
+| **`restaurant_rag`** ([`shiny_app/restaurant_rag.py`](shiny_app/restaurant_rag.py)) | Trip preference narrative → Places Text Search (**baseline + food-hint**; Food Guide adds **refinement-phrased query** when `chat_refinement` set), embedding cosine rank + optional keyword boost, Place Details, `price_tier` + `rag_match_score` on candidates. |
 | **`google_places_client`** ([`shiny_app/google_places_client.py`](shiny_app/google_places_client.py)) | Places API (New): `searchText`, GET Place Details, field masks. |
 | **`context`** ([`shiny_app/context.py`](shiny_app/context.py)) | Reads repo-root [`docs/architecture.md`](docs/architecture.md) for the plan LLM when the server uses full architecture context (bypassed when `TD_LIGHT_ARCH_CONTEXT` supplies a short stub). |
 | **`supabase_client`** ([`shiny_app/supabase_client.py`](shiny_app/supabase_client.py)) | Supabase client, users, preferences. |
@@ -108,7 +108,7 @@ The content below is **generated** from [`docs/architecture_v3.md`](docs/archite
 
 | Topic | Implementation today | Roadmap (aligned with target diagram) |
 |-------|----------------------|----------------------------------------|
-| **RAG (restaurants)** | **Embedding retrieval** over **Places Text Search** results (name, address, types, editorial summary, rating line). Review text is **not** embedded for ranking; snippets are passed to the LLM after ranking. Optional **keyword overlap** boost from “food I like” tokens. | Richer signals (menus if licensed), multi-query fusion, optional re-rank with reviews. |
+| **RAG (restaurants)** | **Embedding retrieval** over **Places Text Search** results (name, address, types, editorial summary, rating line); Food Guide **`chat_refinement`** prefixes the semantic query and can add another search variant. Review text is **not** embedded for ranking; snippets are passed to the LLM after ranking. Optional **keyword overlap** boost from “food I like” **and refinement** tokens. | Richer signals (menus if licensed), multi-query fusion, optional re-rank with reviews. |
 | **Architecture “RAG”** | Full [`docs/architecture.md`](docs/architecture.md) via [`shiny_app/context.py`](shiny_app/context.py), **or** a short in-code stub when `TD_LIGHT_ARCH_CONTEXT` is set ([`shiny_app/server.py`](shiny_app/server.py)). | Same. |
 | **Tool calling** | **No** LLM-invoked tools; Places and World Bank are **server-orchestrated** HTTP calls. | Model-driven tool use if product needs it. |
 
@@ -153,7 +153,7 @@ Ollama is invoked from a **shared host** (`OLLAMA_HOST`, default `https://ollama
 |------|----------------|-----------------|---------------|
 | **Agent 2** | `nemotron-3-nano:30b-cloud` | [`agent_loop.py`](shiny_app/agent_loop.py) orchestrated from [`server.py`](shiny_app/server.py) on **Generate** and chat refinement | Multiple `ollama_chat` calls may occur inside the bounded orchestrator loop (draft + repair/self-check turns) to produce compliant **plan JSON** (`dining`, `essential`). `friendliness` in that JSON is discarded; scores come from World Bank. |
 | **QC Agent** | `gpt-oss:20b-cloud` (OTHER tier default) | [`agent_loop.py`](shiny_app/agent_loop.py) inside the orchestrator QC loop | Runs QC scoring/details over Agent 2 outputs. Deterministic checks remain hard evidence; LLM output is used as bounded quality assistance and explanation. |
-| **Auxiliary (“OTHER”)** | `gpt-oss:20b-cloud` | [`us_travel_advisory.py`](shiny_app/us_travel_advisory.py), [`travel_friendliness/pipeline.py`](shiny_app/travel_friendliness/pipeline.py) | (1) **U.S. travel advisory** — after the State Dept row is matched, a short plain-text summary (separate `ollama_chat` with a small `num_predict` cap). (2) **Friendliness HTML report** — optional **Purpose** / **Recommendations** paragraphs; skipped when `TD_FRIENDLINESS_SKIP_REPORT_LLM` is set or when `OLLAMA_API_KEY` is missing. |
+| **Auxiliary (“OTHER”)** | `gpt-oss:20b-cloud` | [`us_travel_advisory.py`](shiny_app/us_travel_advisory.py), [`travel_friendliness/pipeline.py`](shiny_app/travel_friendliness/pipeline.py), [`server.py`](shiny_app/server.py) (**Food Guide** follow-up + quick-reply chips) | (1) **U.S. travel advisory** — after the State Dept row is matched, a short plain-text summary (separate `ollama_chat` with a small `num_predict` cap). (2) **Friendliness HTML report** — optional **Purpose** / **Recommendations** paragraphs; skipped when `TD_FRIENDLINESS_SKIP_REPORT_LLM` is set or when `OLLAMA_API_KEY` is missing. (3) **Food Guide** — bounded short assistant paragraph and chip suggestions (not Agent 2’s plan JSON). |
 
 **Agent 1** (restaurant retrieval) uses **Google Places** + **sentence-transformers** embeddings only — **no** Ollama. `OLLAMA_MODEL_AGENT1` and `resolved_model_agent1()` are reserved for a future Agent 1 LLM step.
 
@@ -200,7 +200,7 @@ Use **one Google Cloud project** and **one API key** for both server-side Places
 
 - **Shiny app:** [`shiny_app/`](shiny_app/) — `app.py` (entrypoint; background warm of `all-MiniLM-L6-v2`), `ui.py`, `server.py`, `plan_logic.py`, `restaurant_rag.py`, `google_places_client.py`, `context.py`, `validators.py`, `supabase_client.py`, `ollama_client.py`, `components/`, `www/custom.css`
 - **SQL:** [`supabase/migrations/`](supabase/migrations/)
-- **Docs / prompt context:** [`docs/architecture.md`](docs/architecture.md)
+- **Docs:** [`docs/architecture_v3.md`](docs/architecture_v3.md) (canonical **implemented** orchestrator narrative + diagram source for README); [`docs/architecture.md`](docs/architecture.md) (Agent 2 system-context text)
 
 **Deployment:** The documented path is **local** (`shiny run app.py`). You can host on **Posit Connect**, **Shiny Server**, or a **container**; configure the same environment variables on the host. There is **no app-level password** in this prototype—use platform auth, VPN, or network rules if you expose it beyond localhost.
 
