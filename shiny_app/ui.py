@@ -201,6 +201,21 @@ _CHAT_WIDGET_JS = ui.tags.script(
     """
 )
 
+_CHAT_INPUT_ENTER_JS = ui.tags.script(
+    """
+    document.addEventListener('keydown', function(ev) {
+      var t = ev.target;
+      if (!t || t.id !== 'agent_chat_input') return;
+      if (ev.key !== 'Enter') return;
+      if (ev.isComposing || ev.keyCode === 229) return;
+      if (ev.shiftKey) return;
+      ev.preventDefault();
+      var btn = document.getElementById('btn_agent_send');
+      if (btn) btn.click();
+    });
+    """
+)
+
 # Bundled Fuse (CDN can be blocked; must load before td_trip_fields.js).
 _FUSE_JS = ui.include_js(path=APP_ROOT / "www" / "vendor" / "fuse.min.js")
 _TRIP_FIELDS_JS = ui.include_js(path=APP_ROOT / "www" / "td_trip_fields.js")
@@ -213,21 +228,24 @@ app_ui = ui.page_fillable(
         _MAP_PLACE_ROW_CLICK_JS,
         _AGENT_CHIP_CLICK_JS,
         _CHAT_WIDGET_JS,
+        _CHAT_INPUT_ENTER_JS,
         _PREF_CLIENT_JS,
         _TD_COUNTRIES_EMBED_JS,
         _FUSE_JS,
         _TRIP_FIELDS_JS,
     ),
-    ui.div(
         ui.div(
+            ui.output_ui("plan_card_visibility_style"),
+            ui.output_ui("new_location_bar"),
             ui.div(
-                ui.span("T", class_="td-nav-logo"),
-                ui.span("Travel Dashboard", class_="td-nav-title"),
-                class_="td-nav-brand",
+                ui.div(
+                    ui.span("T", class_="td-nav-logo"),
+                    ui.span("Travel Dashboard", class_="td-nav-title"),
+                    class_="td-nav-brand",
+                ),
+                class_="td-nav",
             ),
-            class_="td-nav",
-        ),
-        ui.div(
+            ui.div(
             ui.div(
                 ui.card(
                     ui.div(
@@ -246,10 +264,11 @@ app_ui = ui.page_fillable(
                         col_widths=(4, 4, 4),
                     ),
                     ui.div(
-                        ui.output_ui("food_section_ui"),
-                        class_="td-plan-food-row",
-                    ),
-                    ui.div(
+                        ui.p(
+                            "Optional — name and email save your food preferences for next visits. "
+                            "Return with the same email and we load your last saved selections.",
+                            class_="td-muted td-identity-intro",
+                        ),
                         ui.div(
                             ui.input_text("user_email_debounced", None, value=""),
                             class_="td-hidden-shiny-input-wrap",
@@ -258,55 +277,52 @@ app_ui = ui.page_fillable(
                             ui.input_text("device_id", None, value=""),
                             class_="td-hidden-shiny-input-wrap",
                         ),
-                        ui.layout_columns(
-                            ui.div(
-                                ui.input_text(
-                                    "user_first_name",
-                                    "First name",
-                                    placeholder="Ada",
-                                    autocomplete="section-td-identity given-name",
+                        ui.div(
+                            ui.layout_columns(
+                                ui.div(
+                                    ui.input_text(
+                                        "user_first_name",
+                                        "First name",
+                                        placeholder="Ada",
+                                        autocomplete="section-td-identity given-name",
+                                    ),
+                                    class_="td-identity-col",
                                 ),
-                                ui.p(
-                                    "Add your first name and email to save preferences for future visits.",
-                                    class_="td-muted td-identity-hint",
+                                ui.div(
+                                    ui.input_text(
+                                        "user_email",
+                                        "Email",
+                                        placeholder="ada@example.com",
+                                        autocomplete="section-td-identity email",
+                                    ),
+                                    ui.p(ui.output_text("last_saved_hint"), class_="td-muted td-last-saved"),
+                                    class_="td-identity-col",
                                 ),
-                                class_="td-identity-col",
+                                ui.div(
+                                    ui.input_action_button(
+                                        "btn_save",
+                                        "Save food preferences",
+                                        class_="btn btn-sm td-btn-secondary td-identity-action-btn",
+                                    ),
+                                    class_="td-action-row td-actions-end td-plan-identity-actions",
+                                ),
+                                col_widths=(4, 4, 4),
                             ),
-                            ui.div(
-                                ui.input_text(
-                                    "user_email",
-                                    "Email",
-                                    placeholder="ada@example.com",
-                                    autocomplete="section-td-identity email",
-                                ),
-                                ui.p(
-                                    "We use your email to remember your preferences on this device.",
-                                    class_="td-muted td-identity-hint",
-                                ),
-                                ui.p(ui.output_text("last_saved_hint"), class_="td-muted td-last-saved"),
-                                class_="td-identity-col",
-                            ),
-                            ui.div(
-                                ui.input_action_button(
-                                    "btn_save",
-                                    "Save food preferences",
-                                    class_="btn td-btn-secondary",
-                                ),
-                                ui.input_action_button(
-                                    "btn_generate",
-                                    "Generate recommendations",
-                                    class_="btn td-btn-primary-mockup",
-                                ),
-                                ui.input_action_button(
-                                    "btn_new_location",
-                                    "New location",
-                                    class_="btn td-btn-secondary",
-                                ),
-                                class_="td-action-row td-actions-end",
-                            ),
-                            col_widths=(4, 4, 4),
+                            class_="td-plan-identity-row",
                         ),
-                        class_="td-plan-row3",
+                        class_="td-plan-identity-block",
+                    ),
+                    ui.div(
+                        ui.output_ui("food_section_ui"),
+                        class_="td-plan-food-row",
+                    ),
+                    ui.div(
+                        ui.input_action_button(
+                            "btn_generate",
+                            "Generate recommendations",
+                            class_="btn td-btn-primary-mockup td-generate-recommendations-btn",
+                        ),
+                        class_="td-generate-after-food",
                     ),
                     id="plan",
                     class_="td-card td-plan-card",

@@ -14,6 +14,37 @@ This document is for **anyone who needs to understand the intended experience** 
 
 ---
 
+## User flow at a glance
+
+This chart shows the typical end-to-end experience. New users and returning users differ only at the very start; from **Pick destination and when** onward, everyone follows the same path.
+
+```mermaid
+flowchart TD
+    open["Open the dashboard"]
+    decide{"Visited before<br/>with this email?"}
+
+    email["Enter your email<br/>(or your browser autofills it)"]
+    welcome["Welcome back<br/>Saved food preferences load<br/>and a 'Last saved' date appears"]
+
+    optId["Add first name and email<br/>(optional — saves your food<br/>preferences for next visit)"]
+
+    where["Pick destination and when"]
+    food["Set or adjust food preferences<br/>(likes, dislikes, dietary)"]
+    gen["Click Generate recommendations"]
+    see["See Local Dishes to Try,<br/>recommended restaurants,<br/>essential info, and travel friendliness"]
+    refine["Refine via the Food Guide chat"]
+    newTrip["Click New Trip<br/>(saved profile stays on the form)"]
+
+    open --> decide
+    decide -->|"Yes, returning"| email --> welcome --> where
+    decide -->|"No, new user"| optId --> where
+    where --> food --> gen --> see
+    see --> refine
+    see --> newTrip
+```
+
+---
+
 ## Design principles
 
 | Principle | What it means for users |
@@ -101,7 +132,8 @@ Implementation note (current app): this device id is pushed to a hidden Shiny in
 ## Additional current behavior (implemented)
 
 - **Generate collapses food inputs to a summary** with an "Edit food preferences" action; this helps keep the plan card compact after recommendations appear.
-- **New location** clears destination fields and chat/session state, but keeps saved profile preferences available for reuse.
+- **Identity (first name + email)** sits **above** food preferences in the plan card, with copy that name/email are optional and used to save/reload preferences for returning visitors.
+- **New Trip** appears in a **full-width bar at the top of the page** only **after** at least one successful recommendation run (from **Generate** or the Food Guide **Send**). It clears destination and chat/session state, but keeps saved profile fields on the form for reuse. When recommendations are present, the plan card (Plan your trip, Identity, Food preferences, Generate) is hidden so users can iterate via the Food Guide chat or click **New Trip** to restart. Clicking **New Trip** restores the form.
 - **Returning user preload trigger** uses both debounce (~500 ms after typing stops) and blur, matching the timing expectations above.
 
 ---

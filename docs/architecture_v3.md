@@ -38,7 +38,7 @@ flowchart TB
     MacroData["Macro data\nWorld Bank API"]
     FriendlinessPipe["Friendliness pipeline\nDeterministic scoring + HTML report\n(Optional single LLM call for prose)"]
 
-    DashIn <-->|"Save · preload"| Supabase
+    DashIn <-->|"Save · preload · optional Generate auto-save"| Supabase
 
     DashIn -->|"Generate · Food Guide Send"| Orchestrator
 
@@ -67,13 +67,16 @@ flowchart TB
     style FriendlinessPipe fill:#f4d7d7
 ```
 
-**How the app actually wires this:** **`DashIn`** is what the user edits and clicks; **`DashOut`** is what Shiny redraws from `reactive` values. Agent 2 runs **inside** `run_orchestrator_loop`. The loop returns finalized JSON to **`server.py`**, which runs **`validate_plan_guardrails`**, then updates **`plan_state` / markers** so **`DashOut`** refreshes Dining + Essential. **Supabase** hooks only **Save · preload** (inputs path). **Friendliness** starts from **Generate** on the inputs side in parallel with the orchestrator—not from `agent_loop.py`.
+**How the app actually wires this:** **`DashIn`** is what the user edits and clicks; **`DashOut`** is what Shiny redraws from `reactive` values. Agent 2 runs **inside** `run_orchestrator_loop`. The loop returns finalized JSON to **`server.py`**, which runs **`validate_plan_guardrails`**, then updates **`plan_state` / markers** so **`DashOut`** refreshes Dining + Essential. **Supabase** is reached from **`DashIn`** via **`server.py`** on **Save**, **email preload**, and **optional append of `preference` on Generate** when identity (first name + valid email) is complete—not from the Orchestrator loop. **Friendliness** starts from **Generate** on the inputs side in parallel with the orchestrator—not from `agent_loop.py`.
 
 ---
 
 ## Responsibilities
 
 ### Orchestrator (agentic loop)
+
+Narrative companion (Generate vs Food Guide chat, Supabase boundaries, interactive follow-ups): [`docs/agentic_loop_readme.md`](docs/agentic_loop_readme.md).
+
 - **Hard guardrails** (no user feedback required)
   - **Dietary**: do not pass recommendations unless compliant; if uncertain, treat as non-compliant.
   - **Location**: do not pass venues outside the destination.
@@ -87,11 +90,11 @@ flowchart TB
   - QC Agent turns: max **3**.
 - **Persistence / evidence**
   - Persists QC evidence logs to `shiny_app/data/qc_logs/`.
-  - **Supabase is not accessed here.** Save / preload is **`DashIn`** ↔ **`server.py`** ↔ Supabase; Food Guide continuity is **`reactive` state** consumed by **`DashOut`**.
+  - **Supabase is not accessed here.** **`DashIn`** ↔ **`server.py`** ↔ Supabase handles **Save**, **preload**, and **qualifying Generate** preference append (same path, not the loop); Food Guide continuity is **`reactive` state** consumed by **`DashOut`**.
 - **Food Guide (chat) refinements** (post-Generate)
   - Each successful Send reruns **`run_orchestrator_loop`** (Agent 1 → Agent 2 → guardrails → optional QC), then copies the finalized plan **and** Agent 1 marker list into reactive state so **Dining — recommended places** and Food Guide recommendation cards stay aligned.
   - The user’s message is fed into Agent 1 as **`chat_refinement`**: it leads the **embedding query**, adds keyword tokens for lexical boost, and (when present) adds an extra **Places Text Search** phrase (`"{refinement} {destination}"`) alongside the baseline restaurant queries (`shiny_app/restaurant_rag.py`).
-  - When phrasing implies **alternative / fresh picks** (e.g. “different recommendations”, “other restaurants”), the server excludes current **`dining.places` titles from the prior plan** before ranking and asks Agent 1 for a **larger `top_k`**, reducing repeat venues when Google returns enough breadth.
+  - When phrasing implies **alternative / fresh picks** (e.g. “different recommendations”, “other restaurants”), the server excludes current **`dining.places` titles from the prior plan** before ranking and asks Agent 1 for a **larger `top_k`**, reducing repeat venues when Google returns enough breadth. Any chat refinement also widens `top_k` modestly (without excluding prior picks), so adding preferences can surface fresh venues without needing the explicit “different” phrasing.
 
 ### Agent 1 (existing)
 - Google Places retrieval + Place Details + embedding similarity ranking; optional **`chat_refinement`** augment for Food Guide turns (above).

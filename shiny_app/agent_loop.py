@@ -614,7 +614,12 @@ def run_orchestrator_loop(
     retrieval_attempts = 0
     last_err: str | None = None
     requested_exclusions = [str(x).strip() for x in (excluded_place_titles or []) if str(x).strip()]
-    retrieval_top_k = 12 if requested_exclusions else 5
+    if requested_exclusions:
+        retrieval_top_k = 12
+    elif refinement_plain:
+        retrieval_top_k = 8
+    else:
+        retrieval_top_k = 5
     city, country = _destination_location_tokens(ctx)
     for attempt in range(1, max(1, b.max_retrieval_reruns) + 2):
         retrieval_attempts = attempt

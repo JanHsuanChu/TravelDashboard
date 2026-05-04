@@ -39,17 +39,17 @@ git push -u origin main
 
 ### Description
 
-**What it does:** The Travel Dashboard is a **Shiny for Python** browser app where users enter a destination, optional compare locations, season or month, and detailed **food preferences** (preset tags plus short free text, including **dietary restrictions** that recommendations must honor). Users can **save** preferences to the database, **generate** recommendations, and refine results through an in-app assistant:
+**What it does:** The Travel Dashboard is a **Shiny for Python** browser app where users enter a destination, optional compare locations, season or month, and detailed **food preferences** (preset tags plus short free text, including **dietary restrictions** that recommendations must honor). It also surfaces **essential destination information** for the country you pick—travel advisory, illustrative weather, and (when configured) Times headlines—alongside dining and trip context. Users can **save** preferences to the database, **generate** recommendations, and refine results through an in-app assistant:
 
-- **Dining — dishes** — LLM-suggested dishes with a **price tier** badge only: **`$`**, **`$$`**, or **`$$$`** (budget / mid-range / upscale–style; inferred, not live menu prices).
+- **Local Dishes to Try** — Card title for **`dining.dishes`**: **Agent 2** fills a flat list of suggested **mains**, **desserts**, and **beverages** (each row has **`category`**: `main`, `dessert`, or `beverage`, plus a short **note** and an illustrative **price tier** badge only: **`$`**, **`$$`**, or **`$$$`**). Picks are **destination-led** (country and city from the trip form) and **preference-aware** (tags and free text, including dietary); they are **independent** of the **Agent 1** restaurant list and of **`dining.places`**—dishes are not venue menus. The UI groups rows under **Mains**, **Desserts**, and **Beverages** ([`shiny_app/server.py`](shiny_app/server.py)); the card shell is [`shiny_app/components/dining_dishes_card.py`](shiny_app/components/dining_dishes_card.py). Prompt rules are in [`shiny_app/plan_logic.py`](shiny_app/plan_logic.py) (`SYSTEM_JSON_INSTRUCTION`, `AGENT2_DINING_GROUNDING`).
 - **Dining — recommended places** — When **Google Places** is configured, the app runs **Agent 1**: real restaurants from **Text Search**, ranked with **embedding similarity** (sentence-transformers) to the user’s preferences, then **Agent 2** (Ollama) writes place notes using that list. Each place shows **retrieval match %** (from RAG scores) and **Google price level** as **`$` / `$$` / `$$$`** when the API returns it. A **Google Map** (Embed API) shows the selected venue.
-- **Essential info** — **Travel advisory** uses live U.S. State Department table data plus a short **auxiliary-model** summary; **weather** still comes from the **Agent 2** plan JSON (illustrative unless you add a live feed).
+- **Essential info** — **Travel advisory** uses live U.S. State Department table data plus a short **auxiliary-model** summary; **weather** comes from the **Agent 2** plan JSON (illustrative climatology for the trip season or month, not a live forecast); **destination news** uses the **New York Times Article Search API** with **`NYT_API_KEY`** (deterministic server-side queries; **no** LLM).
 - **Travel friendliness** — **World Bank**–based scores and HTML report shell in [`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/); numeric scores are **not** from the LLM. Optional **auxiliary-model** prose fills report Purpose/Recommendations when enabled.
-- **Food Guide (chat refinement assistant)** — A floating chat opens after Generate. Each Send can rerun the **orchestrator** (Agent 1 + Agent 2 + guardrails + QC budget). The typed line is wired into Agent 1 as **`chat_refinement`** (stronger embeddings + optional extra Places query). Messages that ask for **different / alternative recommendations** exclude the current **`dining.places` names** server-side before reranking. The finalized JSON and Places markers update **both** **Dining — recommended places** and in-chat recommendation cards. Quick replies and short follow-up prose use the auxiliary (**OTHER**) model; they must align with grounded place names when cards are shown.
+- **Food Guide (chat refinement assistant)** — A floating chat opens after Generate. Each Send can rerun the **orchestrator** (Agent 1 + Agent 2 + guardrails + QC budget). The typed line is wired into Agent 1 as **`chat_refinement`** (stronger embeddings + optional extra Places query). Messages that ask for **different / alternative recommendations** exclude the current **`dining.places` names** server-side before reranking. The finalized JSON and Places markers update **both** **Local Dishes to Try** / **`dining.dishes`** and **Dining — recommended places** and in-chat recommendation cards. Quick replies and short follow-up prose use the auxiliary (**OTHER**) model; they must align with grounded place names when cards are shown.
 - **Guardrails (hard safety constraints)** — Server-side validation enforces destination and dietary constraints before recommendations are accepted. If a result violates guardrails, the orchestrator repairs/retries instead of showing non-compliant output.
 - **QC Evidence (quality transparency panel)** — A user-visible panel summarizes QC Agent checks (initial/final scores, validation results, error rates, QC turns, latency). It is evidence from the same orchestrator run, not a separate recommendation flow.
 
-Without a Places API key, dining places are generic LLM suggestions and the map stays empty; dishes and friendliness still work.
+Without a Places API key, dining places are generic LLM suggestions and the map stays empty; **Local Dishes to Try** and friendliness still work.
 
 **APIs in use:**
 
@@ -58,6 +58,7 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 | **Supabase** (PostgREST via `supabase-py`) | Persist `app_user` and `preference` rows; resolve returning users and load latest preferences by email. |
 | **Ollama Cloud** (`POST …/api/chat`) | **Agent 2** model: plan JSON (dining + essential scaffold). **Auxiliary** model: U.S. advisory blurb + optional friendliness report prose. See [LLM model usage](#llm-model-usage). |
 | **World Bank API** (`api.worldbank.org/v2`) | Travel friendliness scoring and detailed HTML report (see [`docs/travel_friendliness.md`](docs/travel_friendliness.md)). |
+| **The New York Times** ([Article Search API](https://developer.nytimes.com/docs/articlesearch-product/1/overview)) | **Destination news** in Essential info: server-side HTTP to `svc/search/v2/articlesearch.json` with **`NYT_API_KEY`** ([`shiny_app/nyt_news_client.py`](shiny_app/nyt_news_client.py)). |
 | **Google Places API (New)** | Server-side **Text Search** and **Place Details** for restaurant retrieval (`places.googleapis.com`). |
 | **Google Maps Embed API** | In-browser embedded map for the selected recommended place (same API key as Places in this app). |
 | **sentence-transformers** (local, PyTorch) | Embedding model **all-MiniLM-L6-v2** for Agent 1 ranking over place name, address, types, editorial summary (downloaded on first use). |
@@ -73,7 +74,7 @@ Without a Places API key, dining places are generic LLM suggestions and the map 
 | **QC Evidence** | Implemented | Exposes QC Agent metrics (scores, validation, error rates, turns, latency) so users can inspect recommendation quality signals. |
 | **Architecture context in the prompt** | Implemented | `docs/architecture.md` is injected into Agent 2’s system bundle (diagrams/process narrative lives in **`docs/architecture_v3.md`** → generated README sections). |
 | **Agent 1 — Places + embedding RAG** | Implemented (optional) | Live restaurant candidates, semantic ranking, preference-aware search queries; details include `priceLevel` and review snippets for the LLM. |
-| **Agent 2 — Dining copy** | Implemented | Structured dishes (`$`/`$$`/`$$$`) and places aligned to Agent 1 names when available. |
+| **Agent 2 — Dining copy** | Implemented | **`dining.dishes`**: categorized mains/desserts/beverages from destination + prefs (`$`/`$$`/`$$$`), independent of Agent 1. **`dining.places`**: copy aligned to Agent 1 names when Places is configured. |
 | **Full multi-agent orchestration** | Partial / evolving | Two-stage dining pipeline today; broader tool calling and review corpora remain roadmap (see target diagram). |
 
 **Stakeholders:** **Travelers** get a single place for preferences and AI-assisted suggestions; **developers** get a small, inspectable stack (Shiny + Supabase + **Ollama Cloud** with **separate default models** for plan vs auxiliary calls) that can grow toward the multi-agent design in `docs/architecture.md`.
@@ -124,7 +125,7 @@ flowchart TB
     MacroData["Macro data\nWorld Bank API"]
     FriendlinessPipe["Friendliness pipeline\nDeterministic scoring + HTML report\n(Optional single LLM call for prose)"]
 
-    DashIn <-->|"Save · preload"| Supabase
+    DashIn <-->|"Save · preload · optional Generate auto-save"| Supabase
 
     DashIn -->|"Generate · Food Guide Send"| Orchestrator
 
@@ -153,13 +154,16 @@ flowchart TB
     style FriendlinessPipe fill:#f4d7d7
 ```
 
-**How the app actually wires this:** **`DashIn`** is what the user edits and clicks; **`DashOut`** is what Shiny redraws from `reactive` values. Agent 2 runs **inside** `run_orchestrator_loop`. The loop returns finalized JSON to **`server.py`**, which runs **`validate_plan_guardrails`**, then updates **`plan_state` / markers** so **`DashOut`** refreshes Dining + Essential. **Supabase** hooks only **Save · preload** (inputs path). **Friendliness** starts from **Generate** on the inputs side in parallel with the orchestrator—not from `agent_loop.py`.
+**How the app actually wires this:** **`DashIn`** is what the user edits and clicks; **`DashOut`** is what Shiny redraws from `reactive` values. Agent 2 runs **inside** `run_orchestrator_loop`. The loop returns finalized JSON to **`server.py`**, which runs **`validate_plan_guardrails`**, then updates **`plan_state` / markers** so **`DashOut`** refreshes Dining + Essential. **Supabase** is reached from **`DashIn`** via **`server.py`** on **Save**, **email preload**, and **optional append of `preference` on Generate** when identity (first name + valid email) is complete—not from the Orchestrator loop. **Friendliness** starts from **Generate** on the inputs side in parallel with the orchestrator—not from `agent_loop.py`.
 
 ---
 
 ## Responsibilities
 
 ### Orchestrator (agentic loop)
+
+Narrative companion (Generate vs Food Guide chat, Supabase boundaries, interactive follow-ups): [`docs/agentic_loop_readme.md`](docs/agentic_loop_readme.md).
+
 - **Hard guardrails** (no user feedback required)
   - **Dietary**: do not pass recommendations unless compliant; if uncertain, treat as non-compliant.
   - **Location**: do not pass venues outside the destination.
@@ -173,11 +177,11 @@ flowchart TB
   - QC Agent turns: max **3**.
 - **Persistence / evidence**
   - Persists QC evidence logs to `shiny_app/data/qc_logs/`.
-  - **Supabase is not accessed here.** Save / preload is **`DashIn`** ↔ **`server.py`** ↔ Supabase; Food Guide continuity is **`reactive` state** consumed by **`DashOut`**.
+  - **Supabase is not accessed here.** **`DashIn`** ↔ **`server.py`** ↔ Supabase handles **Save**, **preload**, and **qualifying Generate** preference append (same path, not the loop); Food Guide continuity is **`reactive` state** consumed by **`DashOut`**.
 - **Food Guide (chat) refinements** (post-Generate)
   - Each successful Send reruns **`run_orchestrator_loop`** (Agent 1 → Agent 2 → guardrails → optional QC), then copies the finalized plan **and** Agent 1 marker list into reactive state so **Dining — recommended places** and Food Guide recommendation cards stay aligned.
   - The user’s message is fed into Agent 1 as **`chat_refinement`**: it leads the **embedding query**, adds keyword tokens for lexical boost, and (when present) adds an extra **Places Text Search** phrase (`"{refinement} {destination}"`) alongside the baseline restaurant queries (`shiny_app/restaurant_rag.py`).
-  - When phrasing implies **alternative / fresh picks** (e.g. “different recommendations”, “other restaurants”), the server excludes current **`dining.places` titles from the prior plan** before ranking and asks Agent 1 for a **larger `top_k`**, reducing repeat venues when Google returns enough breadth.
+  - When phrasing implies **alternative / fresh picks** (e.g. “different recommendations”, “other restaurants”), the server excludes current **`dining.places` titles from the prior plan** before ranking and asks Agent 1 for a **larger `top_k`**, reducing repeat venues when Google returns enough breadth. Any chat refinement also widens `top_k` modestly (without excluding prior picks), so adding preferences can surface fresh venues without needing the explicit “different” phrasing.
 
 ### Agent 1 (existing)
 - Google Places retrieval + Place Details + embedding similarity ranking; optional **`chat_refinement`** augment for Food Guide turns (above).
@@ -205,10 +209,10 @@ flowchart TB
 
 | Piece | Responsibility |
 |-------|------------------|
-| **UI** ([`shiny_app/ui.py`](shiny_app/ui.py), [`shiny_app/components/`](shiny_app/components/)) | Plan form, outputs grid (dishes, essential, friendliness), full-width dining places + map. |
+| **UI** ([`shiny_app/ui.py`](shiny_app/ui.py), [`shiny_app/components/`](shiny_app/components/)) | Plan form, outputs grid (**Local Dishes to Try**, essential, friendliness), full-width dining places + map. |
 | **Server** ([`shiny_app/server.py`](shiny_app/server.py)) | **Save** → Supabase user + preference; debounced-email preload; **Generate** and chat refinement → orchestrator loop + guardrails + status/QC widgets, plus friendliness thread, optional auto-save, map markers and embed URL. |
 | **`validators`** ([`shiny_app/validators.py`](shiny_app/validators.py)) | Food text, when-mode (season/month), and email shape checks for Save / Generate. |
-| **`plan_logic`** ([`shiny_app/plan_logic.py`](shiny_app/plan_logic.py)) | `build_trip_context`, user/system JSON instructions (dietary rules, dish `$`/`$$`/`$$$`, place alignment to Agent 1). |
+| **`plan_logic`** ([`shiny_app/plan_logic.py`](shiny_app/plan_logic.py)) | `build_trip_context`, user/system JSON instructions (dietary rules, **`dining.dishes`** categories + independence from Agent 1, dish `$`/`$$`/`$$$`, **`dining.places`** alignment to Agent 1). |
 | **`agent_loop`** ([`shiny_app/agent_loop.py`](shiny_app/agent_loop.py)) | Bounded orchestration: Agent 1 retrieval retries, Agent 2 JSON repair loop, hard guardrail validation, and QC Agent evidence loop. |
 | **`restaurant_rag`** ([`shiny_app/restaurant_rag.py`](shiny_app/restaurant_rag.py)) | Trip preference narrative → Places Text Search (**baseline + food-hint**; Food Guide adds **refinement-phrased query** when `chat_refinement` set), embedding cosine rank + optional keyword boost, Place Details, `price_tier` + `rag_match_score` on candidates. |
 | **`google_places_client`** ([`shiny_app/google_places_client.py`](shiny_app/google_places_client.py)) | Places API (New): `searchText`, GET Place Details, field masks. |
@@ -216,8 +220,9 @@ flowchart TB
 | **`supabase_client`** ([`shiny_app/supabase_client.py`](shiny_app/supabase_client.py)) | Supabase client, users, preferences. |
 | **`ollama_client`** ([`shiny_app/ollama_client.py`](shiny_app/ollama_client.py)) | Ollama Cloud chat + JSON extraction. |
 | **`travel_friendliness`** ([`shiny_app/travel_friendliness/`](shiny_app/travel_friendliness/)) | World Bank fetch, scoring, HTML report. |
+| **`nyt_news_client`** ([`shiny_app/nyt_news_client.py`](shiny_app/nyt_news_client.py)) | Article Search HTTP for **Destination news** (`NYT_API_KEY`). |
 
-**Workflow (high level):** On **Generate**, **travel friendliness** is submitted on a **background thread** (unless `TD_DISABLE_TRAVEL_FRIENDLINESS`) while the server may auto-save prefs, run **Agent 1** (if `GOOGLE_PLACES_API_KEY`), and run the **orchestrator loop** (`agent_loop.py`) for Agent 2 JSON generation + guardrail repair + QC Agent turns. The handler waits for both orchestrator output and the friendliness future before updating the UI. If the Places key is set, Agent 2 is grounded with `agent1_restaurants`. The UI merges place rows with coordinates, shows **% match · $tier** when available, and embeds the map. System context is **full `docs/architecture.md`** or a **short stub** when `TD_LIGHT_ARCH_CONTEXT` is set.
+**Workflow (high level):** On **Generate**, **travel friendliness** is submitted on a **background thread** (unless `TD_DISABLE_TRAVEL_FRIENDLINESS`) while the server may auto-save prefs, run **Agent 1** (if `GOOGLE_PLACES_API_KEY`), and run the **orchestrator loop** (`agent_loop.py`) for Agent 2 JSON generation + guardrail repair + QC Agent turns. The handler waits for both orchestrator output and the friendliness future before updating the UI. If the Places key is set, Agent 2 receives **`agent1_restaurants`** for **`dining.places`** only; **`dining.dishes`** stays destination- and preference-grounded per `plan_logic.py`. The UI merges place rows with coordinates, shows **% match · $tier** when available, and embeds the map. System context is **full `docs/architecture.md`** or a **short stub** when `TD_LIGHT_ARCH_CONTEXT` is set.
 
 #### RAG and tool implementation
 
@@ -225,17 +230,27 @@ flowchart TB
 |-------|----------------------|----------------------------------------|
 | **RAG (restaurants)** | **Embedding retrieval** over **Places Text Search** results (name, address, types, editorial summary, rating line); Food Guide **`chat_refinement`** prefixes the semantic query and can add another search variant. Review text is **not** embedded for ranking; snippets are passed to the LLM after ranking. Optional **keyword overlap** boost from “food I like” **and refinement** tokens. | Richer signals (menus if licensed), multi-query fusion, optional re-rank with reviews. |
 | **Architecture “RAG”** | Full [`docs/architecture.md`](docs/architecture.md) via [`shiny_app/context.py`](shiny_app/context.py), **or** a short in-code stub when `TD_LIGHT_ARCH_CONTEXT` is set ([`shiny_app/server.py`](shiny_app/server.py)). | Same. |
-| **Tool calling** | **No** LLM-invoked tools; Places and World Bank are **server-orchestrated** HTTP calls. | Model-driven tool use if product needs it. |
+| **Tool calling** | **No** LLM-invoked tools; Places, World Bank, and **NYT Article Search** (with `NYT_API_KEY`) are **server-orchestrated** HTTP calls. | Model-driven tool use if product needs it. |
 
 If you add tools later, document **name**, **purpose**, **parameters**, and **return shape** here and in code docstrings.
 
-#### Travel advisory
+#### Local dishes to try — how this is generated
 
-On **Generate**, the server pulls the U.S. State Department’s **public** travel advisory listing (the official page embeds the table; a legacy JSON URL may redirect to HTML, which the client parses). Results are **cached** for about **24 hours** by default (`TD_US_ADVISORY_CACHE_SECONDS`); if a refresh fails, the app can still use the **last successful snapshot** so the run does not hard-fail on transient network or HTML changes.
+**Agent 2** emits `dining.dishes` in the same JSON response as **`dining.places`** and **`essential`**. The orchestrator’s user payload includes **`trip_and_food`** (destination, when, food prefs) and a trimmed **`agent1_restaurants`** list; prompts in [`shiny_app/plan_logic.py`](shiny_app/plan_logic.py) state explicitly that **dishes must not** be derived from or tied to that restaurant list (places still must copy **Agent 1** names exactly). Each dish includes **`category`** (`main` \| `dessert` \| `beverage`); [`shiny_app/server.py`](shiny_app/server.py) buckets rows for display. **Guardrails** validate **`dining.places`** against candidates and scan dish **title**/**note** for banned tokens when dietary tags apply—same loop as the rest of the plan, with model repair messages on failure.
 
-The **destination country** you pick is matched to a row using **ISO2** plus name **aliases** from [`shiny_app/www/data/countries_slim.json`](shiny_app/www/data/countries_slim.json) (with fuzzy name fallback when needed). The matched advisory level and official text feed **Essential → Travel advisory** as markdown.
+#### Essential info
 
-A small **auxiliary** Ollama call (same **OTHER** tier as friendliness prose; see [LLM model usage](#llm-model-usage)) adds a **brief plain-language summary** (grounded in the matched row, not a substitute for the official advisory). Wiring lives in [`shiny_app/server.py`](shiny_app/server.py); fetch, cache, parse, and match logic are in [`shiny_app/us_travel_advisory.py`](shiny_app/us_travel_advisory.py).
+The **Essential info** card (see [`shiny_app/components/essential_info_card.py`](shiny_app/components/essential_info_card.py)) scrolls **travel advisory**, **weather**, and **destination news** together.
+
+- **Travel advisory** — On **Generate**, the server pulls the U.S. State Department’s **public** travel advisory listing (the official page embeds the table; a legacy JSON URL may redirect to HTML, which the client parses). Results are **cached** for about **24 hours** by default (`TD_US_ADVISORY_CACHE_SECONDS`); if a refresh fails, the app can still use the **last successful snapshot** so the run does not hard-fail on transient network or HTML changes. The **destination country** you pick is matched to a row using **ISO2** plus name **aliases** from [`shiny_app/www/data/countries_slim.json`](shiny_app/www/data/countries_slim.json) (with fuzzy name fallback when needed). The matched advisory level and official text feed **Essential → Travel advisory** as markdown. A small **auxiliary** Ollama call (same **OTHER** tier as friendliness prose; see [LLM model usage](#llm-model-usage)) adds a **brief plain-language summary** (grounded in the matched row, not a substitute for the official advisory). Wiring lives in [`shiny_app/server.py`](shiny_app/server.py); fetch, cache, parse, and match logic are in [`shiny_app/us_travel_advisory.py`](shiny_app/us_travel_advisory.py).
+
+- **Weather** — The **Weather** subsection shows **`essential.weather`** from the **Agent 2** plan JSON: **one or two short sentences** of **illustrative** climatology for the destination (packing / planning guidance), explicitly tied to the trip **season** or **calendar month** from the trip form. It is **not** wired to a live weather API; treat it as narrative context unless you add a separate forecast source. The orchestrator prompt in [`shiny_app/plan_logic.py`](shiny_app/plan_logic.py) constrains how Agent 2 writes this field.
+
+- **Destination news** — Sourced from the **New York Times Article Search API** using **deterministic** queries in [`shiny_app/nyt_news_client.py`](shiny_app/nyt_news_client.py): **no LLM** and **no** model-in-the-loop for ranking or copy. After **Generate**, a background thread calls the API with **`NYT_API_KEY`**. The destination label is the **canonical English country name** resolved from **ISO2** via the same [`countries_slim.json`](shiny_app/www/data/countries_slim.json) bridge as travel friendliness (`friendliness_country_query` in [`shiny_app/iso2_bridge.py`](shiny_app/iso2_bridge.py)), so the text search stays aligned with the country pick. **Query strategy (recall-first):** for each slot the client tries full-text **`q`** on the country name (plus a small alias list for special cases such as UK / Korea) while stepping **`fq`** from **none** → broad **section_name** filters → a tighter “news desk + World” scope; only if those miss does it fall back to **`glocations`** tokens (including quoted continent-style facets when ISO2 is known) **AND** the tighter news filter. **Slot 1** is one **general** article with **`begin_date`** ≈ last **90 days** and **`sort=relevance`**. **Slot 2** is one **travel-leaning** article (`q` includes “{country} travel” / tourism variants), **`begin_date`** ≈ last **two years**, **`sort=relevance`**, with **URL deduplication** against the first hit so links are not repeated. Failures (missing key, HTTP errors, rate limits, empty hits) are **silent** in the UI (no headlines). A short **`sleep`** between NYT calls paces burst traffic.
+
+#### Travel friendliness
+
+**Travel friendliness** runs on **Generate** (unless disabled with `TD_DISABLE_TRAVEL_FRIENDLINESS`): **World Bank** indicator data is fetched and scored **deterministically**; the card summary line is **not** from the main plan LLM. An optional **auxiliary** Ollama pass can add longer **Purpose** / **Recommendations** prose to the downloadable HTML report. For indicator bounds, normalization, when it runs, and file layout, see **[`docs/travel_friendliness.md`](docs/travel_friendliness.md)**.
 
 #### Technical details
 
@@ -256,9 +271,10 @@ A small **auxiliary** Ollama call (same **OTHER** tier as friendliness prose; se
 | `TD_DISABLE_TRAVEL_FRIENDLINESS` | No | When truthy, skips the World Bank friendliness thread during **Generate** (UI shows a disabled message; dining still runs). |
 | `TD_FRIENDLINESS_SKIP_REPORT_LLM` | No | When truthy, keeps World Bank scores and HTML report shell but skips the **extra** Ollama call for report Purpose/Recommendations prose. |
 | `TD_LIGHT_ARCH_CONTEXT` | No | When truthy, uses a short system stub instead of loading full `docs/architecture.md` for the plan model. |
+| `NYT_API_KEY` | Yes | **Destination news** (NYT Article Search) in Essential info — the headline links are empty without this key. Advisory and weather do not use it. |
 | `GOOGLE_PLACES_API_KEY` | No† | Agent 1 restaurant retrieval, Google **price level** on places, **RAG % match** from retrieval scores, and **Maps Embed** iframe. |
 
-†**Why “No”?** The Shiny app **starts** and **Generate** still works without this key: you get LLM-written **dishes**, **essential** text, and **travel friendliness** (World Bank). You do **not** get real venue lookup, the **embedded map**, or server-backed **% match · $** on recommended places—those need `GOOGLE_PLACES_API_KEY`. Treat it as **required** if you want the full dining + map experience described in this README.
+†**Why “No”?** The Shiny app **starts** and **Generate** still works without this key: you get LLM-written **`dining.dishes`** (**Local Dishes to Try**), **essential** text, and **travel friendliness** (World Bank). You do **not** get real venue lookup, the **embedded map**, or server-backed **% match · $** on recommended places—those need `GOOGLE_PLACES_API_KEY`. Treat it as **required** if you want the full dining + map experience described in this README.
 
 #### LLM model usage
 
@@ -285,6 +301,7 @@ Ollama is invoked from a **shared host** (`OLLAMA_HOST`, default `https://ollama
 - Supabase: project REST URL (used by `supabase-py`).
 - Ollama Cloud: `{OLLAMA_HOST or https://ollama.com}/api/chat` — [`shiny_app/ollama_client.py`](shiny_app/ollama_client.py).
 - Google: `https://places.googleapis.com/v1/places:searchText`, Place Details, and `https://www.google.com/maps/embed/v1/place` — [`shiny_app/google_places_client.py`](shiny_app/google_places_client.py).
+- New York Times: `https://api.nytimes.com/svc/search/v2/articlesearch.json` — [`shiny_app/nyt_news_client.py`](shiny_app/nyt_news_client.py) (`NYT_API_KEY`).
 
 #### Google Cloud: Places and Maps Embed setup
 
@@ -313,9 +330,9 @@ Use **one Google Cloud project** and **one API key** for both server-side Places
 
 **Repository layout:**
 
-- **Shiny app:** [`shiny_app/`](shiny_app/) — `app.py` (entrypoint; background warm of `all-MiniLM-L6-v2`), `ui.py`, `server.py`, `plan_logic.py`, `restaurant_rag.py`, `google_places_client.py`, `context.py`, `validators.py`, `supabase_client.py`, `ollama_client.py`, `components/`, `www/custom.css`
+- **Shiny app:** [`shiny_app/`](shiny_app/) — `app.py` (entrypoint; background warm of `all-MiniLM-L6-v2`), `ui.py`, `server.py`, `plan_logic.py`, `restaurant_rag.py`, `google_places_client.py`, `nyt_news_client.py`, `context.py`, `validators.py`, `supabase_client.py`, `ollama_client.py`, `components/`, `www/custom.css`
 - **SQL:** [`supabase/migrations/`](supabase/migrations/)
-- **Docs:** [`docs/architecture_v3.md`](docs/architecture_v3.md) (canonical **implemented** orchestrator narrative + diagram source for README); [`docs/architecture.md`](docs/architecture.md) (Agent 2 system-context text)
+- **Docs:** [`docs/architecture_v3.md`](docs/architecture_v3.md) (canonical **implemented** orchestrator narrative + diagram source for README); [`docs/architecture.md`](docs/architecture.md) (Agent 2 system-context text); [`docs/agentic_loop_readme.md`](docs/agentic_loop_readme.md) (Generate vs Food Guide chat, Supabase boundaries, interactive follow-ups)
 
 **Deployment:** The documented path is **local** (`shiny run app.py`). You can host on **Posit Connect**, **Shiny Server**, or a **container**; configure the same environment variables on the host. There is **no app-level password** in this prototype—use platform auth, VPN, or network rules if you expose it beyond localhost.
 
@@ -328,7 +345,7 @@ cd shiny_app
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env        # set SUPABASE_*, OLLAMA_*; optional GOOGLE_PLACES_API_KEY
+cp .env.example .env        # set SUPABASE_*, OLLAMA_*, NYT_API_KEY; optional GOOGLE_PLACES_API_KEY
 ```
 
 2. **Run:**
@@ -341,7 +358,7 @@ Or from repo root (after venv is ready): `./run_shiny.sh`
 
 3. **Open** the URL Shiny prints (commonly `http://127.0.0.1:8000`).
 
-4. **Use the UI:** Enter **destination** (country required), optional **compare** cities, **when** (season or month), **food** tags and text (including **dietary** checkboxes and restrictions). **Save food preferences** requires first name + email. **Generate recommendations** refreshes **dishes**, **recommended places** (+ map when Google is configured), **essential** blurbs, and **travel friendliness**. A recognized **email** (debounced or on blur) preloads saved preferences.
+4. **Use the UI:** Enter **destination** (country required), optional **compare** cities, **when** (season or month), **food** tags and text (including **dietary** checkboxes and restrictions). **Save food preferences** requires first name + email. **Generate recommendations** refreshes **Local Dishes to Try** (**`dining.dishes`**), **recommended places** (+ map when Google is configured), **essential** blurbs, and **travel friendliness**. A recognized **email** (debounced or on blur) preloads saved preferences. After a successful **Generate** the plan card collapses to keep recommendations and the **Food Guide** chat in focus; click **New Trip** at the top to start a fresh trip.
 
 **Password:** None for the default local app. If you deploy behind a platform that adds authentication, follow that platform’s login flow.
 
@@ -390,9 +407,9 @@ python3 scripts/build_readme.py
 
 Index: `idx_preference_user_created_at` on `(user_id, created_at DESC)`.
 
-#### UI ↔ database mapping (Save)
+#### UI ↔ database mapping (Save · qualifying Generate)
 
-Saving **food preferences** writes one `preference` row and ensures an `app_user` row. Trip fields (destination, compare, when) and **Generate** output are **not** persisted to these tables today.
+Each **Save**, and **Generate** when **first name** and a **valid email** are present, appends one `preference` row (append-only history) and ensures an `app_user` row. Trip fields (destination, compare, when) and **Generate** plan JSON are **not** persisted to these tables today.
 
 | Supabase column / table | Shiny input(s) | Notes |
 |-------------------------|----------------|--------|

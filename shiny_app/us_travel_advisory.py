@@ -508,10 +508,7 @@ def build_travel_advisory_markdown(
     """Markdown body for essential.travel_advisory (under **Travel advisory** heading)."""
     lines: list[str] = []
     loaded = format_loaded_timestamp(snapshot.loaded_at_utc)
-    hours = max(1, _cache_ttl_seconds() // 3600)
-    lines.append(
-        f"> U.S. advisory list loaded {loaded} · refresh at most every {hours} h.\n"
-    )
+    lines.append(f"> U.S. advisory list loaded {loaded}.\n")
     if snapshot.fetch_used_stale_cache and snapshot.last_refresh_error:
         lines.append("> Live refresh failed; showing last successful download.\n")
     if not snapshot.rows:
