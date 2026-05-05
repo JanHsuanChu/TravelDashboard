@@ -3,6 +3,10 @@
 # Local (repo root): `.venv\Scripts\python.exe -m shiny run shiny_app/app.py`
 # Or: `cd shiny_app && ..\.venv\Scripts\python.exe -m shiny run app.py --reload`
 # Running this file directly also starts the server (see __main__ below).
+#
+# Posit Connect (flat bundle from `rsconnect deploy shiny shiny_app`): use entrypoint **app:app**
+# (rsconnect default). Avoid **shiny_app.app:app** — Python loads package `shiny_app` before this file
+# runs, so the flat-bundle shim below never executes.
 
 from pathlib import Path
 import sys
