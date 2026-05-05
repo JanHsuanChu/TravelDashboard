@@ -6,13 +6,26 @@
 
 from pathlib import Path
 import sys
+import types
 
-# Posit Connect loads `shiny_app.app:app` with TravelDashboard root on sys.path.
-# `cd shiny_app && shiny run app.py` only puts shiny_app/ on path — add parent so `shiny_app.*` resolves.
+# Imports use the `shiny_app.*` package name in both layouts below.
 _SHINY_APP_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SHINY_APP_DIR.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+
+# Repo checkout: `TravelDashboard/shiny_app/*.py` lives under a directory named `shiny_app`;
+# add repo root so `import shiny_app` resolves to that folder.
+# Posit Connect bundle: `rsconnect deploy shiny shiny_app` unpacks files at the app root
+# (`app.py`, `server.py`, …) with no parent folder named `shiny_app` — register a namespace
+# package so `shiny_app.server` still loads `server.py` next to `app.py`.
+if (_REPO_ROOT / "shiny_app" / "server.py").is_file():
+    if str(_REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(_REPO_ROOT))
+else:
+    if str(_SHINY_APP_DIR) not in sys.path:
+        sys.path.insert(0, str(_SHINY_APP_DIR))
+    _pkg = types.ModuleType("shiny_app")
+    _pkg.__path__ = [str(_SHINY_APP_DIR)]
+    sys.modules["shiny_app"] = _pkg
 
 import threading
 
