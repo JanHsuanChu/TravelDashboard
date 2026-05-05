@@ -6,8 +6,7 @@ def dining_dishes_output_ui():
     return ui.card(
         ui.card_header(
             ui.div(
-                ui.span("Dining — dishes", class_="td-dining-card-title"),
-                ui.span(ui.output_ui("dining_dest_badge"), class_="td-out-destination-tag-wrap"),
+                ui.span("Local Dishes to Try", class_="td-dining-card-title"),
                 class_="td-dining-card-header",
             ),
         ),

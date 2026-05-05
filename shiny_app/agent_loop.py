@@ -601,9 +601,11 @@ def run_orchestrator_loop(
     )
 
     # If resuming and user gave new info, fold it into a lightweight preference narrative tail.
-    pref = (preference_narrative or "").strip()
-    if user_message and user_message.strip():
-        pref = (pref + " " + f"User follow-up: {user_message.strip()}").strip()
+    base_pref = (preference_narrative or "").strip()
+    pref = base_pref
+    refinement_plain = (user_message or "").strip() or None
+    if refinement_plain:
+        pref = (pref + " " + f"User follow-up: {refinement_plain}").strip()
 
     # Note: Conversation starts after Generate (UI). This loop focuses on producing a compliant plan JSON.
 
@@ -612,14 +614,20 @@ def run_orchestrator_loop(
     retrieval_attempts = 0
     last_err: str | None = None
     requested_exclusions = [str(x).strip() for x in (excluded_place_titles or []) if str(x).strip()]
-    retrieval_top_k = 12 if requested_exclusions else 5
+    if requested_exclusions:
+        retrieval_top_k = 12
+    elif refinement_plain:
+        retrieval_top_k = 8
+    else:
+        retrieval_top_k = 5
     city, country = _destination_location_tokens(ctx)
     for attempt in range(1, max(1, b.max_retrieval_reruns) + 2):
         retrieval_attempts = attempt
         logger.info("retrieve_attempt session=%s attempt=%s", sid[:8], attempt)
         candidates, last_err = run_agent1_places_rag(
             destination_label=destination_label,
-            preference_narrative=pref,
+            preference_narrative=base_pref,
+            chat_refinement=refinement_plain,
             learned_weights=None,
             top_k=retrieval_top_k,
         )
@@ -808,7 +816,8 @@ def run_orchestrator_loop(
         try:
             refreshed, refreshed_err = run_agent1_places_rag(
                 destination_label=destination_label,
-                preference_narrative=pref,
+                preference_narrative=base_pref,
+                chat_refinement=refinement_plain,
                 learned_weights=None,
                 top_k=max(12, retrieval_top_k),
             )

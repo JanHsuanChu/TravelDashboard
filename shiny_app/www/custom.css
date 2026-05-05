@@ -109,6 +109,111 @@ ul.td-country-dd li.td-country-dd-item:hover {
   min-height: 0;
 }
 
+/* Full-width bar: appears after a successful recommendation run; clears trip + chat */
+.td-new-location-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1.25rem;
+  width: 100%;
+  padding: 0.55rem 1.5rem;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, rgba(172, 133, 233, 0.1) 0%, rgba(1, 225, 242, 0.07) 100%);
+  border-bottom: 1px solid rgba(172, 133, 233, 0.22);
+}
+
+.td-new-location-hint {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+  flex: 1 1 220px;
+}
+
+/* After Generate + Food Guide success: plan card hidden; tighten Outputs heading */
+body.td-recs-active .td-section-title {
+  margin-top: 0.25rem;
+}
+
+.td-identity-intro {
+  margin: 0 0 0.22rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  max-width: 44rem;
+  opacity: 0.92;
+}
+
+/* Compact identity strip: low visual weight, tight to food prefs below */
+.td-plan-identity-block {
+  margin-top: 0.65rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-top: 1px solid rgba(172, 133, 233, 0.22);
+}
+
+.td-plan-identity-row {
+  margin: 0;
+}
+
+/* bslib layout_columns = grid; top-align columns so actions sit beside inputs */
+.td-plan-identity-row bslib-layout-columns.bslib-grid {
+  align-items: start;
+}
+
+.td-plan-identity-actions {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.45rem;
+  justify-content: flex-start;
+  /* ~ label + gap so buttons line up with input controls in cols 1–2 */
+  padding-top: 1.78rem;
+  min-width: 8rem;
+}
+
+.td-plan-identity-actions.td-actions-end {
+  align-items: flex-end;
+}
+
+.td-identity-action-btn.btn {
+  white-space: nowrap;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+/* Minimal gap: identity strip → food preferences (override .td-plan-food-row defaults) */
+.td-plan-identity-block + .td-plan-food-row {
+  margin-top: 0;
+  padding-top: 0.42rem;
+  padding-bottom: 0.65rem;
+}
+
+.td-plan-identity-block + .td-plan-food-row::before {
+  margin: -0.42rem -1rem 0.45rem;
+  height: 3px;
+}
+
+/* Primary CTA after food prefs — ~30% larger than default btn */
+.td-generate-after-food {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.55rem;
+  padding-top: 0.2rem;
+}
+
+.td-generate-after-food .td-generate-recommendations-btn.td-btn-primary-mockup,
+.td-generate-after-food .btn.td-btn-primary-mockup {
+  font-size: 1.3rem;
+  padding: 0.52rem 1.4rem;
+  border-radius: 0.55rem;
+  line-height: 1.35;
+  font-weight: 600;
+  box-shadow:
+    0 2px 10px rgba(172, 133, 233, 0.35),
+    0 3px 14px rgba(172, 133, 233, 0.22);
+}
+
 /* --- Nav --- */
 .td-nav {
   position: relative;
@@ -519,8 +624,8 @@ ul.td-country-dd li.td-country-dd-item:hover {
 }
 
 .td-agent-ctx-tag.td-agent-ctx-diet {
-  background: rgba(239, 159, 39, 0.12);
-  border-color: rgba(239, 159, 39, 0.18);
+  background: rgba(255, 108, 157, 0.12);
+  border-color: rgba(255, 108, 157, 0.22);
 }
 
 .td-agent-ctx-tag.td-agent-ctx-like {
@@ -529,8 +634,8 @@ ul.td-country-dd li.td-country-dd-item:hover {
 }
 
 .td-agent-ctx-tag.td-agent-ctx-dislike {
-  background: rgba(255, 108, 157, 0.10);
-  border-color: rgba(255, 108, 157, 0.18);
+  background: rgba(239, 159, 39, 0.12);
+  border-color: rgba(239, 159, 39, 0.18);
 }
 
 .td-agent-rec-card .td-dining-place-address {
@@ -939,6 +1044,24 @@ ul.td-country-dd li.td-country-dd-item:hover {
   background: rgba(172, 133, 233, 0.08) !important;
 }
 
+/* Soft-filled secondary CTA (e.g. New Trip bar): stronger than outline, softer than primary gradient */
+.td-btn-tinted {
+  background: rgba(172, 133, 233, 0.16) !important;
+  border: 1px solid rgba(172, 133, 233, 0.45) !important;
+  color: var(--td-purple) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(172, 133, 233, 0.18);
+}
+
+.td-btn-tinted:hover {
+  background: rgba(172, 133, 233, 0.24) !important;
+  border-color: var(--td-purple) !important;
+}
+
+.td-btn-tinted:active {
+  background: rgba(172, 133, 233, 0.32) !important;
+}
+
 .td-btn-primary-mockup {
   background: linear-gradient(90deg, var(--td-purple) 0%, var(--td-pink) 100%) !important;
   border: none !important;
@@ -1263,6 +1386,36 @@ ul.td-country-dd li.td-country-dd-item:hover {
   letter-spacing: 0.01em;
 }
 
+/* Destination news — divider aligned with ``h3:not(:first-child)`` between Travel advisory and Weather */
+.td-out-accent-essential .td-essential-news-block {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--td-border);
+}
+
+.td-out-accent-essential .td-destination-news-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin: 0 0 0.28rem;
+}
+
+.td-out-accent-essential .td-destination-news-header-row h3 {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 8rem;
+}
+
+.td-out-accent-essential .td-destination-news-header-row .td-destination-news-source {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--td-text-muted);
+  flex: 0 0 auto;
+  text-align: right;
+}
+
 .td-out-accent-essential .td-essential-body h3 {
   font-size: 0.68rem;
   font-weight: 600;
@@ -1546,15 +1699,25 @@ ul.td-country-dd li.td-country-dd-item:hover {
   margin-bottom: 0;
 }
 
-.td-last-saved {
-  font-size: 0.8rem;
-  margin-top: 0.35rem;
+/* Last-saved hint sits under Email; overrides td-muted font-size (!important). */
+.td-muted.td-last-saved {
+  margin: 0 !important;
+  font-size: 0.65rem !important;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--td-text-muted) !important;
 }
 
 .td-identity-col {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.td-plan-identity-block .td-identity-col .form-label,
+.td-plan-identity-block .td-identity-col label.form-label {
+  font-size: 0.8125rem;
+  margin-bottom: 0.2rem;
 }
 
 @media (max-width: 991.98px) {

@@ -51,7 +51,7 @@ This communicates: “I already know this; you don’t need to repeat it.”
   - Chips are **LLM-generated** but validated server-side (count/length/no URLs).
   - Clicking a chip populates the message box.
 - Free text remains available for anything outside chips.
-- A **New location** action exists on the **main dashboard** (not inside the widget) and resets destination + chat state.
+- A **New Trip** action exists on the **main dashboard** (not inside the widget) and resets destination + chat state.
 
 ### Agent Status (collapsible drawer inside widget)
 Agent Status is a user-visible “thinking surface” inside the widget:
@@ -155,18 +155,12 @@ Current persistence used by the app:
 
 1. **Identity + preference preload**: debounced email lookup loads latest saved profile (`app_user` + latest `preference` row).
 2. **Save + Generate auto-save path**: when identity is complete, preferences are written append-only to `preference`.
-3. **Durable chat deltas (limited cases)**: certain chat intents such as “avoid spicy” / “no raw fish” can append a new `preference` snapshot.
+
+Chat refinement never writes to Supabase. The Food Guide chat widget runs fully ephemerally against the current form context; users persist preferences only via **Save** or by clicking **Generate** with a completed identity (first name + valid email).
 
 Notes:
 - Agent-session/feedback/weights helper functions exist in `shiny_app/supabase_client.py`, but the current UI loop primarily relies on `app_user` and `preference`.
 - QC loop evidence is persisted to local JSON files under `shiny_app/data/qc_logs/` via `agent_loop.py`.
-
-## Inline preference learning (visible + trustworthy)
-
-When the user types something durable in chat (e.g., “avoid spicy”, “no raw fish”), the agent may decide to persist it as a **delta preference** for future trips.
-
-- **De-dup rule**: if the preference is already present in the form values or latest stored profile, it is not stored again.
-- **Storage**: write an append-only new row to the existing `preference` table (latest row represents current profile).
 
 ## Preference match scores (soft signal)
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import os
 import re
@@ -48,6 +49,7 @@ from shiny_app.supabase_client import (
     normalize_email,
 )
 from shiny_app.travel_friendliness.pipeline import FriendlinessResult, compute_friendliness
+from shiny_app.nyt_news_client import fetch_destination_news
 from shiny_app.us_travel_advisory import (
     build_travel_advisory_markdown,
     get_advisory_snapshot,
@@ -230,7 +232,24 @@ def _default_plan() -> dict:
     return {
         "dining": {
             "dishes": [
-                {"title": "Sample dish", "note": "Run Generate with Ollama configured.", "badge": "$$"},
+                {
+                    "title": "Sample main",
+                    "note": "Run Generate with Ollama configured.",
+                    "badge": "$$",
+                    "category": "main",
+                },
+                {
+                    "title": "Sample dessert",
+                    "note": "Placeholder sweet pick for the destination.",
+                    "badge": "$",
+                    "category": "dessert",
+                },
+                {
+                    "title": "Sample drink",
+                    "note": "Placeholder local beverage.",
+                    "badge": "$",
+                    "category": "beverage",
+                },
             ],
             "places": [
                 {"title": "Sample place", "note": "Placeholder until agents and data sources are wired.", "badge": "—"},
@@ -371,6 +390,14 @@ def _merge_places_rows(plan: dict, markers: list[dict]) -> list[dict]:
     return rows
 
 
+def _normalize_dish_category(it: dict) -> str:
+    """Map model output to main | dessert | beverage; unknown → main."""
+    c = str((it or {}).get("category") or "").strip().lower()
+    if c in ("main", "dessert", "beverage"):
+        return c
+    return "main"
+
+
 def _dish_item_block(it: dict) -> ui.Tag:
     return ui.div(
         ui.div(
@@ -388,17 +415,33 @@ def _dish_item_block(it: dict) -> ui.Tag:
 
 def _dining_dishes_only_ui(plan: dict) -> ui.Tag:
     d = plan.get("dining") or {}
-    dishes = d.get("dishes") or []
-    dish_section = (
-        ui.div(*(_dish_item_block(i) for i in dishes))
-        if dishes
-        else ui.p("No dishes yet.", class_="td-muted")
-    )
-    return ui.div(
-        ui.div("Dishes", class_="td-output-subhead"),
-        dish_section,
-        class_="td-dining-out",
-    )
+    raw = d.get("dishes") or []
+    mains: list[dict] = []
+    desserts: list[dict] = []
+    beverages: list[dict] = []
+    for i in raw:
+        if not isinstance(i, dict):
+            continue
+        cat = _normalize_dish_category(i)
+        if cat == "dessert":
+            desserts.append(i)
+        elif cat == "beverage":
+            beverages.append(i)
+        else:
+            mains.append(i)
+    sections: list[ui.Tag] = []
+    for label, items in (
+        ("Mains", mains),
+        ("Desserts", desserts),
+        ("Beverages", beverages),
+    ):
+        if not items:
+            continue
+        sections.append(ui.div(label, class_="td-output-subhead"))
+        sections.append(ui.div(*(_dish_item_block(x) for x in items)))
+    if not sections:
+        return ui.div(ui.p("No local dishes yet.", class_="td-muted"), class_="td-dining-out")
+    return ui.div(*sections, class_="td-dining-out")
 
 
 def _place_address_line(r: dict) -> ui.Tag:
@@ -532,10 +575,10 @@ def _filter_pref_tags(ft: dict | None) -> tuple[list[str], list[str], list[str]]
 
 def server(input, output, session):
     plan_state = reactive.Value(_default_plan())
-    dining_badge_state = reactive.Value("")
     places_error_state = reactive.Value("")
     map_places_state = reactive.Value([])
     friendliness_state = reactive.Value[FriendlinessResult | None](None)
+    news_state = reactive.Value[list[dict]]([])
     last_lookup_email = reactive.Value(None)
     last_saved_iso = reactive.Value("")
     last_welcome_key = reactive.Value(None)
@@ -543,13 +586,13 @@ def server(input, output, session):
     agent_pending_question = reactive.Value("")
     agent_status_msg = reactive.Value("")
     food_collapsed = reactive.Value(False)
-    chat_messages = reactive.Value([])  # list[dict{role, content, includes_recs, chips, saved_notice}]
+    chat_messages = reactive.Value([])  # list[dict{role, content, includes_recs, chips}]
     chat_assistant_turns = reactive.Value(0)
     quick_replies_state = reactive.Value([])  # list[dict{label,message}]
     status_panel_open = reactive.Value(True)
     qc_widget_open = reactive.Value(False)
-    saved_pref_notice = reactive.Value("")  # one-line last notice for UI
     initial_food_state = reactive.Value(None)  # snapshot of food prefs from initial Generate
+    show_new_location_bar = reactive.Value(False)
 
     def _append_chat(role: str, content: str, *, includes_recs: bool = False) -> None:
         rows = list(chat_messages() or [])
@@ -558,11 +601,15 @@ def server(input, output, session):
         if role == "assistant":
             chat_assistant_turns.set(int(chat_assistant_turns() or 0) + 1)
 
-    def _is_new_area_refinement(msg: str) -> bool:
+    def _requests_fresh_restaurant_list(msg: str) -> bool:
+        """
+        True when the Food guide message asks for replacement dining picks while staying on the trip.
+        Enables excluding current dining.place titles before Agent 1 and widens retrieval top_k.
+        """
         m = (msg or "").strip().lower()
         if not m:
             return False
-        cues = (
+        area_geo_cues = (
             "another district",
             "different district",
             "another area",
@@ -572,7 +619,80 @@ def server(input, output, session):
             "somewhere else",
             "elsewhere",
         )
-        return any(c in m for c in cues)
+        alternative_cues = (
+            "different restaurant",
+            "different restaurants",
+            "other restaurant",
+            "other restaurants",
+            "another restaurant",
+            "different place",
+            "different places",
+            "other place",
+            "other places",
+            "new place",
+            "new places",
+            "another set",
+            "different set",
+            "different sets",
+            "other set",
+            "different picks",
+            "new picks",
+            "fresh picks",
+            "different spots",
+            "other spots",
+            "not those",
+            "not these",
+            "skip these",
+            "skip those",
+            "avoid these",
+            "avoid those",
+            "don't want these",
+            "dont want these",
+            "something different",
+            "try something different",
+            "try different",
+            "show me others",
+            "give me others",
+            "alternative restaurant",
+            "other options",
+            "different options",
+            "different suggestions",
+            "other suggestions",
+            "swap restaurant",
+            "change restaurant",
+            "replace restaurant",
+            "find different",
+            "another round",
+            "redo dining",
+            "refresh dining",
+            "refresh restaurants",
+            "more restaurants",
+            "different venue",
+            "different venues",
+            "different recommendation",
+            "different recommendations",
+            "other recommendation",
+            "other recommendations",
+            "new recommendation",
+            "new recommendations",
+            "another recommendation",
+            "more recommendation",
+            "more recommendations",
+        )
+        return any(c in m for c in area_geo_cues) or any(c in m for c in alternative_cues)
+
+    def _implies_recommendation_refresh_ui(msg: str) -> bool:
+        """Broad phrasing → show refreshed place cards; also pairs (different|…) + recommend."""
+        if _requests_fresh_restaurant_list(msg):
+            return True
+        m = (msg or "").strip().lower()
+        if not m:
+            return False
+        if "recommend" in m:
+            for head in ("different", "other", "another", "new", "more", "alternative", "additional", "fresh"):
+                if head in m:
+                    return True
+        return False
 
     def _requested_outside_guardrail_location(msg: str, *, ctx: dict) -> str | None:
         """
@@ -667,11 +787,28 @@ def server(input, output, session):
         dislike_text_chips = _text_to_chips(input.food_dislike_text() or "")
         dietary_text_chips = _text_to_chips(input.dietary_restrictions_text() or "")
         return {
-            "location": [x for x in (loc, when_tag) if x],
+            "location": [loc] if loc else [],
+            "when": [when_tag] if when_tag else [],
             "dietary": dietary + dietary_text_chips,
             "like": like + like_text_chips,
             "dislike": dislike + dislike_text_chips,
         }
+
+    def _context_bar_div() -> ui.Tag:
+        """Chip row: location → when → like → dislike → dietary (single source for Food Guide)."""
+        tags = _context_tags_for_ui()
+        parts: list[ui.Tag] = [ui.span("From your form:", class_="td-agent-ctx-label")]
+        for t in tags.get("location") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
+        for t in tags.get("when") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
+        for t in tags.get("like") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-like"))
+        for t in tags.get("dislike") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-dislike"))
+        for t in tags.get("dietary") or []:
+            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-diet"))
+        return ui.div(*parts, class_="td-agent-contextbar")
 
     def _maybe_generate_quick_replies(*, ctx: dict, plan: dict, last_user_message: str | None = None) -> None:
         """
@@ -715,7 +852,15 @@ def server(input, output, session):
             )
             user = (
                 "Context:\n"
-                + str({"location": facts["location"], "dietary": facts["dietary"], "likes": facts["like"], "dislikes": facts["dislike"]})
+                + str(
+                    {
+                        "location": facts["location"],
+                        "when": facts.get("when") or [],
+                        "likes": facts["like"],
+                        "dislikes": facts["dislike"],
+                        "dietary": facts["dietary"],
+                    }
+                )
                 + "\nLast user message:\n"
                 + (last_msg or "(none)")
                 + "\nTop places:\n"
@@ -768,6 +913,8 @@ def server(input, output, session):
             "- Do NOT re-ask location, timing, dietary restrictions, or dislikes.\n"
             "- If you need more info, ask at most ONE clarifying question.\n"
             "- If recommendations were refreshed, say so briefly.\n"
+            "- Name ONLY venues that appear verbatim in Top places below; NEVER invent restaurants or neighborhoods.\n"
+            "- If the list overlaps prior picks, acknowledge that plainly instead of implying new venues.\n"
             "- No bullet lists.\n"
         )
         user = (
@@ -796,74 +943,6 @@ def server(input, output, session):
         short = short[:120] + "…" if len(short) > 120 else short
         return f"Got it — {short}"
 
-    def _maybe_save_durable_delta(*, msg: str, ctx: dict) -> None:
-        """
-        Save durable deltas to the preference table (append-only).
-        De-dup against current form values and latest stored preference.
-        """
-        if not _identity_complete(input):
-            return
-        m = (msg or "").strip().lower()
-        if not m:
-            return
-
-        # Example durable delta: "avoid spicy"
-        avoid_spicy = ("avoid spicy" in m) or ("no spicy" in m) or ("not spicy" in m)
-        if not avoid_spicy:
-            # Example durable delta: "no raw fish"
-            if "no raw fish" in m or "avoid raw fish" in m:
-                # For now store this as a dislike text hint (append-only preference row).
-                em = normalize_email(input.user_email() or "")
-                _, pref_row = fetch_user_and_latest_preference(em)
-                stored_dr = (pref_row.get("dietary_restrictions") or "") if pref_row else ""
-                if "raw fish" in stored_dr.lower():
-                    return
-                uid = get_or_create_user(email=em, first_name=(input.user_first_name() or "").strip())
-                insert_preference(
-                    user_id=uid,
-                    food_like_text=(input.food_like_text() or "") or None,
-                    food_dislike_text=(input.food_dislike_text() or "") or None,
-                    dietary_restrictions=((input.dietary_restrictions_text() or "") + " No raw fish.").strip() or None,
-                    food_tags=_food_tags_from_input(input),
-                )
-                saved_pref_notice.set('✓ "No raw fish" saved to your profile')
-            return
-
-        # De-dup: if already selected as dislike or not present as a like, skip.
-        cur_like = set(_as_tag_list(input.like_tags()))
-        cur_dislike = set(_as_tag_list(input.dislike_tags()))
-        if "spicy" in cur_dislike:
-            return
-
-        em = normalize_email(input.user_email() or "")
-        _, pref_row = fetch_user_and_latest_preference(em)
-        stored_dislike = set()
-        stored_like = set()
-        if pref_row and isinstance(pref_row.get("food_tags"), dict):
-            ft = pref_row.get("food_tags") or {}
-            stored_like = set(ft.get("like") or [])
-            stored_dislike = set(ft.get("dislike") or [])
-        if "spicy" in stored_dislike:
-            return
-
-        # Merge: remove from likes if present, add to dislikes.
-        new_like = [x for x in cur_like if x != "spicy"]
-        new_dislike = sorted(list(cur_dislike | {"spicy"}))
-        new_tags = {
-            "like": new_like,
-            "dislike": new_dislike,
-            "dietary": _as_tag_list(input.dietary_tags()),
-        }
-        uid = get_or_create_user(email=em, first_name=(input.user_first_name() or "").strip())
-        insert_preference(
-            user_id=uid,
-            food_like_text=(input.food_like_text() or "") or None,
-            food_dislike_text=(input.food_dislike_text() or "") or None,
-            dietary_restrictions=(input.dietary_restrictions_text() or "") or None,
-            food_tags=new_tags,
-        )
-        saved_pref_notice.set('✓ "Avoid spicy" saved to your profile')
-
     def _food_summary_from_ctx(ctx: dict) -> str:
         food = ctx.get("food") or {}
         like = ", ".join(str(x) for x in (food.get("like_tags") or []) if x)
@@ -877,6 +956,39 @@ def server(input, output, session):
         if dietary:
             parts.append(f"Dietary: {dietary}")
         return " · ".join(parts) if parts else "No food preferences set."
+
+    def _apply_food_snapshot_to_form(food: dict) -> None:
+        """Re-push food tag + text inputs after widgets were unmounted (collapsed summary UI)."""
+        if not isinstance(food, dict):
+            return
+
+        def _tag_selected(key: str) -> list[str]:
+            raw = food.get(key) or []
+            if not isinstance(raw, list):
+                return []
+            return [str(x) for x in raw]
+
+        ui.update_text_area(
+            "food_like_text",
+            label="More detail (optional)",
+            value=str(food.get("food_like_text") or ""),
+            session=session,
+        )
+        ui.update_text_area(
+            "food_dislike_text",
+            label="More detail (optional)",
+            value=str(food.get("food_dislike_text") or ""),
+            session=session,
+        )
+        ui.update_text_area(
+            "dietary_restrictions_text",
+            label="Allergies or other restrictions (optional)",
+            value=str(food.get("dietary_restrictions") or ""),
+            session=session,
+        )
+        ui.update_checkbox_group("like_tags", selected=_tag_selected("like_tags"), session=session)
+        ui.update_checkbox_group("dislike_tags", selected=_tag_selected("dislike_tags"), session=session)
+        ui.update_checkbox_group("dietary_tags", selected=_tag_selected("dietary_tags"), session=session)
 
     def _opening_message(ctx: dict, plan: dict) -> str:
         dest = (ctx.get("destination") or {})
@@ -1047,6 +1159,11 @@ def server(input, output, session):
         cmp1_c = friendliness_country_query(cmp1_iso, cmp1_name) if cmp1_iso else ""
         cmp2_c = friendliness_country_query(cmp2_iso, cmp2_name) if cmp2_iso else ""
 
+        # Same canonical country label as friendliness (``countries_slim.json`` via ISO2),
+        # not only the visible text field, so NYT queries stay aligned with the list pick.
+        news_pool = ThreadPoolExecutor(max_workers=1)
+        news_fut = news_pool.submit(fetch_destination_news, dc, dc_iso)
+
         friend_pool: ThreadPoolExecutor | None = None
         fr_fut = None  # Future from background compute_friendliness when enabled
         if _travel_friendliness_disabled():
@@ -1064,11 +1181,11 @@ def server(input, output, session):
             fr_fut = friend_pool.submit(compute_friendliness, dc, cmp1_c, cmp2_c)
 
         try:
+            news_state.set([])
             food_collapsed.set(False)
             chat_messages.set([])
             chat_assistant_turns.set(0)
             quick_replies_state.set([])
-            saved_pref_notice.set("")
             skipped_persist = not _identity_complete(input)
             if not skipped_persist:
                 try:
@@ -1113,10 +1230,6 @@ def server(input, output, session):
                 )
                 if p
             )
-            dining_badge_state.set(
-                (input.dest_city() or "").strip() or (input.dest_country() or "").strip() or "Destination"
-            )
-
             trip_food_narrative = preference_narrative_from_trip_food(ctx["food"])
             pref_narrative = trip_food_narrative
             if _identity_complete(input):
@@ -1196,8 +1309,8 @@ def server(input, output, session):
                         summary_advisory,
                     )
                     parsed["essential"] = ess
-                    plan_state.set(parsed)
-                    map_places_state.set(_markers_from_candidates(agent1_candidates))
+                    plan_state.set(copy.deepcopy(parsed))
+                    map_places_state.set(copy.deepcopy(_markers_from_candidates(agent1_candidates)))
                     ui.update_text("map_place_pick", value="0", session=session)
                     agent_pending_question.set("")
                     qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
@@ -1211,6 +1324,7 @@ def server(input, output, session):
                     food_collapsed.set(True)
                     _append_chat("assistant", _opening_message(ctx, parsed), includes_recs=True)
                     generated_ok = True
+                    show_new_location_bar.set(True)
                     _maybe_generate_quick_replies(ctx=ctx, plan=parsed, last_user_message=None)
                     if skipped_persist:
                         ui.notification_show(
@@ -1258,6 +1372,12 @@ def server(input, output, session):
                     session=session,
                 )
         finally:
+            try:
+                news_state.set(news_fut.result() or [])
+            except Exception:
+                news_state.set([])
+            news_pool.shutdown(wait=True)
+
             if fr_fut is not None:
                 try:
                     fr = fr_fut.result()
@@ -1274,13 +1394,6 @@ def server(input, output, session):
                 friend_pool.shutdown(wait=True)
 
     @render.ui
-    def dining_dest_badge():
-        t = dining_badge_state().strip()
-        if not t:
-            return ui.span()
-        return ui.span(t, class_="td-out-destination-tag")
-
-    @render.ui
     def places_retrieval_error():
         msg = places_error_state().strip()
         if not msg:
@@ -1289,6 +1402,38 @@ def server(input, output, session):
             ui.p("Restaurant retrieval (Agent 1 — Google Places)", class_="td-places-error-title"),
             ui.tags.pre(msg, class_="td-places-error-body"),
             class_="td-places-error-banner",
+        )
+
+    @render.ui
+    def new_location_bar():
+        if not show_new_location_bar():
+            return ui.div()
+        return ui.div(
+            ui.input_action_button(
+                "btn_new_location",
+                "New Trip",
+                class_="btn td-btn-tinted td-new-trip-btn",
+            ),
+            ui.span(
+                "Starts a fresh trip and clears the chat. Your saved food preferences stay on the form.",
+                class_="td-muted td-new-location-hint",
+            ),
+            class_="td-new-location-bar",
+        )
+
+    @render.ui
+    def plan_card_visibility_style():
+        if show_new_location_bar():
+            return ui.TagList(
+                ui.tags.style("#plan { display: none !important; }"),
+                ui.tags.script(
+                    "document.body.classList.add('td-recs-active'); "
+                    "window.scrollTo(0, 0);"
+                ),
+            )
+        return ui.tags.script(
+            "document.body.classList.remove('td-recs-active'); "
+            "window.scrollTo(0, 0);"
         )
 
     @render.ui
@@ -1365,6 +1510,32 @@ def server(input, output, session):
     def out_essential():
         return ui.markdown(_format_essential(plan_state()))
 
+    @render.ui
+    def out_destination_news():
+        items = news_state() or []
+        if not items:
+            return ui.div()
+        header = ui.div(
+            ui.h3("Destination news"),
+            ui.span(
+                ui.tags.em("Source: The New York Times"),
+                class_="td-destination-news-source",
+            ),
+            class_="td-destination-news-header-row",
+        )
+        links = [
+            ui.p(
+                ui.tags.a(
+                    it.get("headline") or "",
+                    href=it.get("url") or "#",
+                    target="_blank",
+                    rel="noopener noreferrer",
+                ),
+            )
+            for it in items
+        ]
+        return ui.div(header, *links, class_="td-essential-news-block")
+
     @reactive.effect
     @reactive.event(input.btn_agent_send)
     def _agent_send():
@@ -1439,8 +1610,8 @@ def server(input, output, session):
             pref_narrative = trip_food_narrative
             budgets = LoopBudgets(min_llm_turns=2, max_llm_turns=6, max_retrieval_reruns=6)
             exclude_titles: list[str] = []
-            area_refresh_requested = _is_new_area_refinement(msg)
-            if area_refresh_requested:
+            fresh_list_requested = _requests_fresh_restaurant_list(msg)
+            if fresh_list_requested:
                 current_places = (((plan_state() or {}).get("dining") or {}).get("places") or [])
                 exclude_titles = [
                     str(p.get("title") or "").strip()
@@ -1474,30 +1645,62 @@ def server(input, output, session):
                 agent_status_msg.set(guard_err or "Guardrail blocked the recommendation.")
                 return
             prev_titles = [str(p.get("title") or "").strip() for p in (((plan_state() or {}).get("dining") or {}).get("places") or [])[:3] if isinstance(p, dict)]
-            plan_state.set(parsed)
-            map_places_state.set(_markers_from_candidates(agent1_candidates))
+            plan_state.set(copy.deepcopy(parsed))
+            map_places_state.set(copy.deepcopy(_markers_from_candidates(agent1_candidates)))
             ui.update_text("map_place_pick", value="0", session=session)
             agent_pending_question.set("")
+            show_new_location_bar.set(True)
             qc_meta = ((parsed.get("_meta") or {}).get("agent4_qc") or {})
             fs = (qc_meta.get("final_scores") or {}) if isinstance(qc_meta, dict) else {}
             loc_s = fs.get("location_likert")
             diet_s = fs.get("dietary_likert")
             qc_suffix = f" | QC L={loc_s}/5 D={diet_s}/5" if (loc_s is not None and diet_s is not None) else ""
             status_msg = f"Done. session={res.session_id[:8]} turns={res.llm_turns_used} retrieval={res.retrieval_attempts}{qc_suffix}"
-            if area_refresh_requested and exclude_titles:
-                status_msg += " | Trying a different area and avoiding previous picks."
+            if fresh_list_requested and exclude_titles:
+                status_msg += " | Refreshing picks (excluding previous venues)."
             agent_status_msg.set(status_msg)
             new_titles = [str(p.get("title") or "").strip() for p in (((parsed.get("dining") or {}).get("places")) or [])[:3] if isinstance(p, dict)]
             m = msg.lower()
-            intent_refresh = any(x in m for x in ("dessert", "sweet", "cheaper", "budget", "different area", "another area", "near", "close to", "more like"))
-            includes = bool(intent_refresh or (new_titles and new_titles != prev_titles))
+            intent_refresh = (
+                fresh_list_requested
+                or _implies_recommendation_refresh_ui(msg)
+                or any(
+                    x in m
+                    for x in (
+                        "dessert",
+                        "sweet",
+                        "cheaper",
+                        "budget",
+                        "near",
+                        "close to",
+                        "more like",
+                    )
+                )
+            )
+            includes = bool(intent_refresh or prev_titles != new_titles)
             followup = _assistant_followup_message(ctx=ctx, user_message=msg, plan=parsed, cards_shown=includes)
             _append_chat("assistant", followup, includes_recs=includes)
-            _maybe_save_durable_delta(msg=msg, ctx=ctx)
             _maybe_generate_quick_replies(ctx=ctx, plan=parsed, last_user_message=msg)
             ui.update_text("agent_chat_input", value="", session=session)
         except Exception as e:
             agent_status_msg.set(f"Send failed: {e}")
+
+    @render.ui
+    def when_timing_detail():
+        """Server-side toggle: avoids unreliable ui.panel_conditional with layout_columns."""
+        if input.when_mode() == "month":
+            return ui.input_select(
+                "when_month",
+                "Month",
+                choices=tagdata.MONTH_CHOICES,
+                selected="6",
+            )
+        return ui.input_select(
+            "when_season",
+            "Season",
+            choices=tagdata.SEASON_CHOICES,
+            selected="summer",
+        )
 
     @render.ui
     def agent_question_box():
@@ -1565,7 +1768,14 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_food_expand)
     def _expand_food():
+        snap = initial_food_state()
         food_collapsed.set(False)
+        if isinstance(snap, dict) and snap:
+
+            def _after_expand_flush() -> None:
+                _apply_food_snapshot_to_form(dict(snap))
+
+            session.on_flushed(_after_expand_flush, once=True)
 
     def _chat_place_cards_ui(*, max_cards: int = 3) -> ui.Tag:
         rows = _merge_places_rows(plan_state(), map_places_state())[:max_cards]
@@ -1600,21 +1810,14 @@ def server(input, output, session):
     @render.ui
     def chat_area_ui():
         # Proper chat UI: context bar + bubbles + cards + quick reply pills + pinned input.
+        _ps = plan_state()
+        _mp = map_places_state()
+
         rows = list(chat_messages() or [])
         if not rows:
             return ui.div()
 
-        tags = _context_tags_for_ui()
-        ctx_parts: list[ui.Tag] = [ui.span("From your form:", class_="td-agent-ctx-label")]
-        for t in (tags.get("location") or []):
-            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
-        for t in (tags.get("dietary") or []):
-            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-diet"))
-        for t in (tags.get("like") or []):
-            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-like"))
-        for t in (tags.get("dislike") or []):
-            ctx_parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-dislike"))
-        context_bar = ui.div(*ctx_parts, class_="td-agent-contextbar")
+        context_bar = _context_bar_div()
 
         header = ui.div(
             ui.div("FG", class_="td-chat-avatar"),
@@ -1659,10 +1862,8 @@ def server(input, output, session):
                         )
                     )
                 chip_row = ui.div(*chip_buttons, class_="td-chat-pill-row") if chip_buttons else ui.div()
-                notice = (saved_pref_notice() or "").strip()
-                save_notice_ui = ui.div(notice, class_="td-chat-save-notice") if notice else ui.div()
                 recs = _chat_place_cards_ui(max_cards=3) if bool(r.get("includes_recs")) else ui.div()
-                extra = ui.div(recs, chip_row, save_notice_ui, class_="td-chat-bubble-extra")
+                extra = ui.div(recs, chip_row, class_="td-chat-bubble-extra")
 
             bubbles.append(ui.div(ui.div(content, extra, class_=bubble_cls), class_=row_cls))
 
@@ -1715,34 +1916,32 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_new_location)
     def _new_location():
-        # Clear destination fields only; keep saved preferences.
+        # Clear destination + chat; keep identity and food prefs on the form.
+        snap = initial_food_state()
+        if not isinstance(snap, dict):
+            snap = {}
+        snap_copy = dict(snap)
+        show_new_location_bar.set(False)
         ui.update_text("dest_country", value="", session=session)
         ui.update_text("dest_country_iso2", value="", session=session)
         ui.update_text("dest_city", value="", session=session)
         food_collapsed.set(False)
+
+        def _after_new_trip_flush() -> None:
+            if snap_copy:
+                _apply_food_snapshot_to_form(snap_copy)
+                initial_food_state.set(dict(snap_copy))
+            else:
+                initial_food_state.set(None)
+
+        session.on_flushed(_after_new_trip_flush, once=True)
         chat_messages.set([])
         chat_assistant_turns.set(0)
         quick_replies_state.set([])
         agent_session_id.set("")
         agent_status_msg.set("")
         agent_pending_question.set("")
-        saved_pref_notice.set("")
-        initial_food_state.set(None)
         ui.notification_show(ui.span("Pick a new destination, then Generate again."), type="message", duration=6, session=session)
-
-    @render.ui
-    def context_bar_ui():
-        tags = _context_tags_for_ui()
-        parts = [ui.span("From your form:", class_="td-agent-ctx-label")]
-        for t in tags.get("location") or []:
-            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-loc"))
-        for t in tags.get("dietary") or []:
-            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-diet"))
-        for t in tags.get("like") or []:
-            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-like"))
-        for t in tags.get("dislike") or []:
-            parts.append(ui.span(str(t), class_="td-agent-ctx-tag td-agent-ctx-dislike"))
-        return ui.div(*parts, class_="td-agent-contextbar")
 
     @render.ui
     def agent_status_panel_ui():

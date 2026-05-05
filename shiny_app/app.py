@@ -1,6 +1,8 @@
 # app.py
 # Travel Dashboard — Shiny for Python entrypoint.
-# Local: from repo root `shiny run shiny_app/app.py` or `cd shiny_app && shiny run app.py --reload`
+# Local (repo root): `.venv\Scripts\python.exe -m shiny run shiny_app/app.py`
+# Or: `cd shiny_app && ..\.venv\Scripts\python.exe -m shiny run app.py --reload`
+# Running this file directly also starts the server (see __main__ below).
 
 from pathlib import Path
 import sys
@@ -43,3 +45,10 @@ def _warm_embeddings_background() -> None:
 threading.Thread(target=_warm_embeddings_background, daemon=True).start()
 
 app = App(app_ui, server, static_assets=_APP_DIR / "www")
+
+
+if __name__ == "__main__":
+    # IDE / `python shiny_app/app.py`: start ASGI server (same as `shiny run`).
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
